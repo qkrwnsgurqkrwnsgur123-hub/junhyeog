@@ -14,7 +14,11 @@ import re
 from io import BytesIO
 
 from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.styles import (
+    Font,
+    Alignment,
+    PatternFill
+)
 
 
 app = Flask(__name__)
@@ -48,27 +52,34 @@ DB_NAME = os.path.join(
 # 한국 시간
 # =========================================================
 
-KST = ZoneInfo("Asia/Seoul")
+KST = ZoneInfo(
+    "Asia/Seoul"
+)
 
 
 def now_kst():
-    return datetime.now(KST)
+
+    return datetime.now(
+        KST
+    )
 
 
 def now_string():
+
     return now_kst().strftime(
         "%Y-%m-%d %H:%M:%S"
     )
 
 
 def today_string():
+
     return now_kst().strftime(
         "%Y-%m-%d"
     )
 
 
 # =========================================================
-# DB
+# DB 연결
 # =========================================================
 
 def get_db():
@@ -78,7 +89,9 @@ def get_db():
         timeout=30
     )
 
-    conn.row_factory = sqlite3.Row
+    conn.row_factory = (
+        sqlite3.Row
+    )
 
     return conn
 
@@ -92,7 +105,7 @@ def init_db():
     conn = get_db()
 
     # -----------------------------------------------------
-    # 기본 스캔 테이블
+    # 스캔 기록
     # -----------------------------------------------------
 
     conn.execute("""
@@ -120,7 +133,7 @@ def init_db():
     """)
 
     # -----------------------------------------------------
-    # 기존 DB에 없는 컬럼 자동 추가
+    # 기존 DB 컬럼 자동 보완
     # -----------------------------------------------------
 
     columns = conn.execute(
@@ -133,14 +146,23 @@ def init_db():
     ]
 
     required_columns = {
+
         "main_category": "TEXT",
+
         "sub_category": "TEXT",
+
         "alc_code": "TEXT",
+
         "alc_type": "TEXT",
+
         "p_code": "TEXT",
+
         "part_number": "TEXT",
+
         "product_date": "TEXT",
+
         "scanned_at": "TEXT"
+
     }
 
     for name, column_type in required_columns.items():
@@ -155,7 +177,7 @@ def init_db():
             )
 
     # -----------------------------------------------------
-    # 리워크 / 폐기 테이블
+    # 리워크 / 폐기
     # -----------------------------------------------------
 
     conn.execute("""
@@ -189,7 +211,7 @@ def init_db():
     """)
 
     # -----------------------------------------------------
-    # 예전 '재고' 명칭 수정
+    # 옛날 재고 이름
     # -----------------------------------------------------
 
     conn.execute("""
@@ -217,24 +239,33 @@ def clean_field(field):
 
 
 # =========================================================
-# SPK0 특수 바코드
+# SPK0
 # =========================================================
 
 def parse_spk0_barcode(raw):
 
     if not raw:
+
         return None
 
     fields = []
 
-    for field in raw.split("\x1d"):
+    for field in raw.split(
+        "\x1d"
+    ):
 
-        cleaned = clean_field(field)
+        cleaned = clean_field(
+            field
+        )
 
         if cleaned:
-            fields.append(cleaned)
+
+            fields.append(
+                cleaned
+            )
 
     if len(fields) < 2:
+
         return None
 
     first_field = (
@@ -254,64 +285,104 @@ def parse_spk0_barcode(raw):
 
         if match:
 
-            part_number = match.group(0)
+            part_number = (
+                match.group(0)
+            )
+
             break
 
     if not part_number:
+
         return None
 
-    # SPK0 형식
-    # 예: 82SU2XBU10NNB
+    # -----------------------------------------------------
+    # 현재 확인된 SPK0 계열
+    #
+    # 예:
+    # 82SU2XBU10NNB
+    # -----------------------------------------------------
+
     if not re.fullmatch(
         r"82SU[A-Z0-9]+NNB",
         first_field
     ):
+
         return None
 
     return {
-        "alc_code": "SPK0",
-        "alc_type": "FRT",
-        "p_code": first_field,
-        "part_number": part_number,
-        "product_date": ""
+
+        "alc_code":
+            "SPK0",
+
+        "alc_type":
+            "FRT",
+
+        "p_code":
+            first_field,
+
+        "part_number":
+            part_number,
+
+        "product_date":
+            ""
+
     }
 
 
 # =========================================================
-# 일반 바코드 파싱
+# 바코드 분석
 # =========================================================
 
 def parse_barcode(raw):
 
-    empty_result = {
+    empty = {
+
         "alc_code": "",
+
         "alc_type": "",
+
         "p_code": "",
+
         "part_number": "",
+
         "product_date": ""
+
     }
 
     if not raw:
-        return empty_result
 
-    records = raw.split("#")
+        return empty
+
+    records = raw.split(
+        "#"
+    )
 
     for record in records:
 
         fields = [
+
             clean_field(field)
-            for field in record.split("\x1d")
+
+            for field in record.split(
+                "\x1d"
+            )
+
         ]
 
-        record_alc = ""
-        record_alc_type = ""
-        record_p = ""
-        record_part = ""
-        record_date = ""
+        alc_code = ""
+
+        alc_type = ""
+
+        p_code = ""
+
+        part_number = ""
+
+        product_date = ""
 
         for field in fields:
 
             if not field:
+
                 continue
 
             # =================================================
@@ -319,15 +390,16 @@ def parse_barcode(raw):
             #
             # SU304 -> U304 -> FRT
             # SL...  -> L...  -> FRT
+            #
             # SRA8   -> RA8   -> RR
             # SR...  -> R...  -> RR
             # SS...  -> S...  -> RR
             #
-            # VR148은 V 필드라 ALC로 사용하지 않음
+            # VR148은 무시
             # =================================================
 
             if (
-                not record_alc
+                not alc_code
                 and len(field) >= 2
                 and field[0].upper() == "S"
             ):
@@ -343,33 +415,39 @@ def parse_barcode(raw):
                     candidate
                 ):
 
-                    record_alc = candidate
+                    alc_code = (
+                        candidate
+                    )
 
                     if candidate[0] in (
                         "U",
                         "L"
                     ):
 
-                        record_alc_type = "FRT"
+                        alc_type = (
+                            "FRT"
+                        )
 
                     elif candidate[0] in (
                         "R",
                         "S"
                     ):
 
-                        record_alc_type = "RR"
+                        alc_type = (
+                            "RR"
+                        )
 
             # =================================================
             # P코드
             # =================================================
 
             if (
-                not record_p
+                not p_code
                 and field.startswith("P")
                 and len(field) > 1
             ):
 
-                record_p = (
+                p_code = (
                     field[1:]
                     .strip()
                 )
@@ -379,66 +457,82 @@ def parse_barcode(raw):
             # =================================================
 
             if (
-                not record_part
+                not part_number
                 and field.startswith("CL4-")
             ):
 
-                record_part = (
+                part_number = (
                     field[1:]
                     .strip()
                 )
 
             # =================================================
             # 생산일자
-            # T260730... -> 2026-07-30
             # =================================================
 
             if (
-                not record_date
+                not product_date
                 and field.startswith("T")
                 and len(field) >= 7
             ):
 
-                date_text = field[1:7]
+                date_text = (
+                    field[1:7]
+                )
 
                 if date_text.isdigit():
 
                     try:
 
-                        parsed_date = datetime.strptime(
+                        parsed = datetime.strptime(
                             "20" + date_text,
                             "%Y%m%d"
                         )
 
-                        record_date = (
-                            parsed_date.strftime(
+                        product_date = (
+                            parsed.strftime(
                                 "%Y-%m-%d"
                             )
                         )
 
                     except ValueError:
+
                         pass
 
-        if record_alc:
+        if alc_code:
 
             return {
-                "alc_code": record_alc,
-                "alc_type": record_alc_type,
-                "p_code": record_p,
-                "part_number": record_part,
-                "product_date": record_date
+
+                "alc_code":
+                    alc_code,
+
+                "alc_type":
+                    alc_type,
+
+                "p_code":
+                    p_code,
+
+                "part_number":
+                    part_number,
+
+                "product_date":
+                    product_date
+
             }
 
     # =====================================================
-    # 일반 ALC가 없으면 SPK0 검사
+    # SPK0
     # =====================================================
 
-    spk0 = parse_spk0_barcode(raw)
+    special = parse_spk0_barcode(
+        raw
+    )
 
-    if spk0:
-        return spk0
+    if special:
 
-    return empty_result
+        return special
+
+    return empty
 
 
 # =========================================================
@@ -458,22 +552,27 @@ def count_query(
 
 
 # =========================================================
-# 기존 P코드 검색
+# 가장 최근 P코드 기록
 # =========================================================
 
-def find_existing_pcode(
+def find_latest_scan(
     conn,
     p_code
 ):
 
     if not p_code:
+
         return None
 
     return conn.execute("""
         SELECT *
+
         FROM scans
+
         WHERE p_code = ?
+
         ORDER BY id DESC
+
         LIMIT 1
     """, (
         p_code,
@@ -481,7 +580,7 @@ def find_existing_pcode(
 
 
 # =========================================================
-# 리워크 이력 검색
+# 리워크 제품 검색
 # =========================================================
 
 def find_rework_item(
@@ -490,17 +589,43 @@ def find_rework_item(
 ):
 
     if not p_code:
+
         return None
 
     return conn.execute("""
         SELECT *
+
         FROM rework_items
+
         WHERE p_code = ?
+
         ORDER BY id DESC
+
         LIMIT 1
     """, (
         p_code,
     )).fetchone()
+
+
+# =========================================================
+# 카테고리 이름
+# =========================================================
+
+def category_text(
+    main_category,
+    sub_category
+):
+
+    text = main_category
+
+    if sub_category:
+
+        text += (
+            " → "
+            + sub_category
+        )
+
+    return text
 
 
 # =========================================================
@@ -575,7 +700,7 @@ def get_statistics(conn):
     )
 
     # =====================================================
-    # 직접 등록 총재고
+    # 직접 총재고
     # =====================================================
 
     direct_stock_finished_frt = count_query(
@@ -671,43 +796,51 @@ def get_statistics(conn):
     )
 
     # =====================================================
-    # 총재고 =
-    # 직접 총재고 + 누적 당일생산분
+    # 총재고
+    #
+    # 직접재고 + 당일생산누적
     # =====================================================
 
     stock_finished_frt = (
         direct_stock_finished_frt
-        + all_production_finished_frt
+        +
+        all_production_finished_frt
     )
 
     stock_finished_rr = (
         direct_stock_finished_rr
-        + all_production_finished_rr
+        +
+        all_production_finished_rr
     )
 
     stock_semi_frt = (
         direct_stock_semi_frt
-        + all_production_semi_frt
+        +
+        all_production_semi_frt
     )
 
     stock_semi_rr = (
         direct_stock_semi_rr
-        + all_production_semi_rr
+        +
+        all_production_semi_rr
     )
 
     stock_frt = (
         stock_finished_frt
-        + stock_semi_frt
+        +
+        stock_semi_frt
     )
 
     stock_rr = (
         stock_finished_rr
-        + stock_semi_rr
+        +
+        stock_semi_rr
     )
 
     stock_total = (
         stock_frt
-        + stock_rr
+        +
+        stock_rr
     )
 
     # =====================================================
@@ -736,11 +869,34 @@ def get_statistics(conn):
 
     shipped_total = (
         shipped_frt
-        + shipped_rr
+        +
+        shipped_rr
     )
 
     # =====================================================
-    # 리워크 / 폐기
+    # 현재재고
+    # =====================================================
+
+    balance_frt = (
+        stock_frt
+        -
+        shipped_frt
+    )
+
+    balance_rr = (
+        stock_rr
+        -
+        shipped_rr
+    )
+
+    balance_total = (
+        stock_total
+        -
+        shipped_total
+    )
+
+    # =====================================================
+    # 리워크
     # =====================================================
 
     rework_waiting = count_query(
@@ -773,8 +929,14 @@ def get_statistics(conn):
     defective_frt = count_query(
         conn,
         """
-        SELECT COUNT(*)
+        SELECT
+            COALESCE(
+                SUM(defect_count),
+                0
+            )
+
         FROM rework_items
+
         WHERE alc_type = 'FRT'
         """
     )
@@ -782,31 +944,16 @@ def get_statistics(conn):
     defective_rr = count_query(
         conn,
         """
-        SELECT COUNT(*)
+        SELECT
+            COALESCE(
+                SUM(defect_count),
+                0
+            )
+
         FROM rework_items
+
         WHERE alc_type = 'RR'
         """
-    )
-
-    # =====================================================
-    # 현재 재고
-    #
-    # 총재고 - 출고
-    # =====================================================
-
-    balance_frt = (
-        stock_frt
-        - shipped_frt
-    )
-
-    balance_rr = (
-        stock_rr
-        - shipped_rr
-    )
-
-    balance_total = (
-        stock_total
-        - shipped_total
     )
 
     # =====================================================
@@ -896,8 +1043,11 @@ def get_statistics(conn):
 
     rework_rows = conn.execute("""
         SELECT *
+
         FROM rework_items
+
         WHERE status = 'REWORK'
+
         ORDER BY id DESC
     """).fetchall()
 
@@ -907,8 +1057,11 @@ def get_statistics(conn):
 
     disposed_rows = conn.execute("""
         SELECT *
+
         FROM rework_items
+
         WHERE status = 'DISPOSED'
+
         ORDER BY id DESC
     """).fetchall()
 
@@ -959,6 +1112,15 @@ def get_statistics(conn):
         "shipped_total":
             shipped_total,
 
+        "balance_frt":
+            balance_frt,
+
+        "balance_rr":
+            balance_rr,
+
+        "balance_total":
+            balance_total,
+
         "defective_frt":
             defective_frt,
 
@@ -973,15 +1135,6 @@ def get_statistics(conn):
 
         "disposed_total":
             disposed_total,
-
-        "balance_frt":
-            balance_frt,
-
-        "balance_rr":
-            balance_rr,
-
-        "balance_total":
-            balance_total,
 
         "alc_counts": [
             dict(row)
@@ -1012,6 +1165,7 @@ def get_statistics(conn):
             dict(row)
             for row in disposed_rows
         ]
+
     }
 
 
@@ -1049,7 +1203,9 @@ def index():
 
     conn = get_db()
 
-    stats = get_statistics(conn)
+    stats = get_statistics(
+        conn
+    )
 
     conn.close()
 
@@ -1113,8 +1269,15 @@ def scan():
             )
         ).strip().upper()
 
+        confirm_move = bool(
+            data.get(
+                "confirm_move",
+                False
+            )
+        )
+
         # =================================================
-        # 카테고리 검사
+        # 카테고리 확인
         # =================================================
 
         if main_category not in (
@@ -1129,10 +1292,6 @@ def scan():
                 "error":
                     "올바른 카테고리를 선택해주세요."
             }), 400
-
-        # =================================================
-        # 생산 / 총재고
-        # =================================================
 
         if main_category in (
             "당일생산분",
@@ -1165,19 +1324,13 @@ def scan():
                     "FRT 또는 RR을 선택해주세요."
             }), 400
 
-        if not raw:
-
-            return jsonify({
-                "success": False,
-                "error":
-                    "바코드 데이터를 읽지 못했습니다."
-            }), 400
-
         # =================================================
         # 파싱
         # =================================================
 
-        parsed = parse_barcode(raw)
+        parsed = parse_barcode(
+            raw
+        )
 
         alc_code = parsed[
             "alc_code"
@@ -1227,19 +1380,17 @@ def scan():
             }), 400
 
         # =================================================
-        # SPK0 = FRT
+        # SPK0
         # =================================================
 
         if alc_code == "SPK0":
-            alc_type = "FRT"
 
-        # =================================================
-        # FRT / RR 비교
-        # =================================================
+            alc_type = "FRT"
 
         if selected_alc_type != alc_type:
 
             return jsonify({
+
                 "success": False,
 
                 "error":
@@ -1247,196 +1398,88 @@ def scan():
                     f"선택: {selected_alc_type}\n"
                     f"실제: {alc_type}\n"
                     f"ALC: {alc_code}"
+
             }), 400
 
         conn = get_db()
 
+        latest = find_latest_scan(
+            conn,
+            p_code
+        )
+
+        rework = find_rework_item(
+            conn,
+            p_code
+        )
+
         # =================================================
-        # 불량
+        # 리워크 복귀 후 다시 불량
+        #
+        # 이 경우에는 자동폐기 X
+        #
+        # 다시 리워크 대기로 보냄
         # =================================================
 
-        if main_category == "불량":
+        returned_rework_again = (
+            main_category == "불량"
+            and rework is not None
+            and rework["status"] == "RETURNED"
+        )
 
-            rework = find_rework_item(
-                conn,
-                p_code
-            )
-
-            # ---------------------------------------------
-            # 이미 폐기
-            # ---------------------------------------------
-
-            if (
-                rework
-                and rework[
-                    "status"
-                ] == "DISPOSED"
-            ):
-
-                conn.close()
-
-                return jsonify({
-                    "success": False,
-
-                    "error":
-                        "⚠️ 이미 폐기된 제품입니다.\n\n"
-                        f"P코드: {p_code}"
-                }), 400
+        if returned_rework_again:
 
             # ---------------------------------------------
-            # 이미 리워크 대기
+            # 리워크 다시 시작
             # ---------------------------------------------
-
-            if (
-                rework
-                and rework[
-                    "status"
-                ] == "REWORK"
-            ):
-
-                conn.close()
-
-                return jsonify({
-                    "success": False,
-
-                    "error":
-                        "⚠️ 이미 리워크 대기 중입니다.\n\n"
-                        f"P코드: {p_code}\n\n"
-                        "복귀 또는 바로 폐기 버튼을 사용해주세요."
-                }), 400
-
-            # ---------------------------------------------
-            # 복귀했던 제품 재불량
-            #
-            # 자동 폐기
-            # ---------------------------------------------
-
-            if (
-                rework
-                and rework[
-                    "status"
-                ] == "RETURNED"
-            ):
-
-                conn.execute("""
-                    UPDATE rework_items
-
-                    SET
-                        status = 'DISPOSED',
-                        defect_count = 2,
-                        disposed_at = ?
-
-                    WHERE id = ?
-                """, (
-                    now_string(),
-                    rework["id"]
-                ))
-
-                conn.commit()
-
-                stats = get_statistics(
-                    conn
-                )
-
-                conn.close()
-
-                return jsonify({
-                    "success": True,
-
-                    "action":
-                        "DISPOSED",
-
-                    "message":
-                        "재불량 제품으로 폐기되었습니다.",
-
-                    "alc_code":
-                        alc_code,
-
-                    "alc_type":
-                        alc_type,
-
-                    "p_code":
-                        p_code,
-
-                    **stats
-                })
-
-            # ---------------------------------------------
-            # 첫 불량
-            # ---------------------------------------------
-
-            existing = find_existing_pcode(
-                conn,
-                p_code
-            )
-
-            if existing:
-
-                if existing[
-                    "sub_category"
-                ]:
-
-                    sub_category = (
-                        existing[
-                            "sub_category"
-                        ]
-                    )
-
-                if existing[
-                    "part_number"
-                ]:
-
-                    part_number = (
-                        existing[
-                            "part_number"
-                        ]
-                    )
-
-                if existing[
-                    "product_date"
-                ]:
-
-                    product_date = (
-                        existing[
-                            "product_date"
-                        ]
-                    )
-
-            if sub_category not in (
-                "완제품",
-                "반제품"
-            ):
-
-                sub_category = "완제품"
 
             conn.execute("""
-                INSERT INTO rework_items (
+                UPDATE rework_items
 
-                    p_code,
+                SET
+                    status = 'REWORK',
+
+                    defect_count =
+                        defect_count + 1,
+
+                    returned_at = NULL,
+
+                    disposed_at = NULL
+
+                WHERE id = ?
+            """, (
+                rework["id"],
+            ))
+
+            # ---------------------------------------------
+            # 불량 스캔 이력
+            # ---------------------------------------------
+
+            conn.execute("""
+                INSERT INTO scans (
+
+                    main_category,
+                    sub_category,
                     alc_code,
                     alc_type,
+                    p_code,
                     part_number,
                     product_date,
-                    sub_category,
-                    status,
-                    defect_count,
-                    first_defect_at
+                    scanned_at
 
                 )
 
                 VALUES (
-                    ?, ?, ?, ?, ?, ?,
-                    'REWORK',
-                    1,
-                    ?
+                    '불량',
+                    '',
+                    ?, ?, ?, ?, ?, ?
                 )
             """, (
-                p_code,
                 alc_code,
                 alc_type,
+                p_code,
                 part_number,
                 product_date,
-                sub_category,
                 now_string()
             ))
 
@@ -1449,13 +1492,14 @@ def scan():
             conn.close()
 
             return jsonify({
+
                 "success": True,
 
                 "action":
                     "REWORK",
 
                 "message":
-                    "리워크 대기로 이동했습니다.",
+                    "다시 리워크 대기로 이동했습니다.",
 
                 "alc_code":
                     alc_code,
@@ -1467,38 +1511,274 @@ def scan():
                     p_code,
 
                 **stats
+
             })
 
         # =================================================
-        # 일반 구간 중복 P코드 검사
+        # 현재 이미 리워크 대기
         # =================================================
 
-        existing = find_existing_pcode(
-            conn,
-            p_code
-        )
-
-        if existing:
+        if (
+            main_category == "불량"
+            and rework is not None
+            and rework["status"] == "REWORK"
+        ):
 
             conn.close()
 
             return jsonify({
+
                 "success": False,
 
                 "duplicate": True,
 
                 "error":
-                    "⚠️ 중복 P코드입니다.\n\n"
-                    f"P코드: {p_code}\n"
-                    f"기존 위치: {existing['main_category']}\n\n"
-                    "새로 읽은 데이터는 저장하지 않았습니다."
+                    "⚠️ 이미 리워크 대기 중인 제품입니다.\n\n"
+                    f"P코드: {p_code}"
+
             }), 409
 
         # =================================================
-        # 정상 저장
+        # 이미 폐기
         # =================================================
 
-        scanned_at = now_string()
+        if (
+            rework is not None
+            and rework["status"] == "DISPOSED"
+        ):
+
+            conn.close()
+
+            return jsonify({
+
+                "success": False,
+
+                "error":
+                    "🗑️ 이미 폐기 처리된 제품입니다.\n\n"
+                    f"P코드: {p_code}"
+
+            }), 409
+
+        # =================================================
+        # P코드 기존 위치 비교
+        # =================================================
+
+        if latest:
+
+            old_main = (
+                latest[
+                    "main_category"
+                ] or ""
+            )
+
+            old_sub = (
+                latest[
+                    "sub_category"
+                ] or ""
+            )
+
+            # ---------------------------------------------
+            # 완전히 같은 카테고리
+            # ---------------------------------------------
+
+            same_category = (
+                old_main == main_category
+                and old_sub == sub_category
+            )
+
+            if same_category:
+
+                conn.close()
+
+                return jsonify({
+
+                    "success": False,
+
+                    "duplicate": True,
+
+                    "error":
+                        "⚠️ 중복 코드입니다.\n\n"
+                        f"P코드: {p_code}\n"
+                        f"카테고리: "
+                        f"{category_text(old_main, old_sub)}\n\n"
+                        "같은 카테고리에 이미 등록되어 있습니다."
+
+                }), 409
+
+            # ---------------------------------------------
+            # 다른 카테고리
+            #
+            # 사용자 확인 필요
+            # ---------------------------------------------
+
+            if not confirm_move:
+
+                old_text = category_text(
+                    old_main,
+                    old_sub
+                )
+
+                new_text = category_text(
+                    main_category,
+                    sub_category
+                )
+
+                conn.close()
+
+                return jsonify({
+
+                    "success": False,
+
+                    "move_required": True,
+
+                    "p_code":
+                        p_code,
+
+                    "from_category":
+                        old_text,
+
+                    "to_category":
+                        new_text,
+
+                    "message":
+                        "다른 카테고리에 같은 P코드가 있습니다."
+
+                }), 409
+
+        # =================================================
+        # 불량 첫 등록
+        # =================================================
+
+        if main_category == "불량":
+
+            # ---------------------------------------------
+            # 리워크 이력이 아직 없음
+            # ---------------------------------------------
+
+            if rework is None:
+
+                # 기존 제품 정보 활용
+                original_sub = ""
+
+                if latest:
+
+                    original_sub = (
+                        latest[
+                            "sub_category"
+                        ]
+                        or ""
+                    )
+
+                if original_sub not in (
+                    "완제품",
+                    "반제품"
+                ):
+
+                    original_sub = (
+                        "완제품"
+                    )
+
+                conn.execute("""
+                    INSERT INTO rework_items (
+
+                        p_code,
+                        alc_code,
+                        alc_type,
+                        part_number,
+                        product_date,
+                        sub_category,
+                        status,
+                        defect_count,
+                        first_defect_at
+
+                    )
+
+                    VALUES (
+                        ?, ?, ?, ?, ?, ?,
+                        'REWORK',
+                        1,
+                        ?
+                    )
+                """, (
+                    p_code,
+                    alc_code,
+                    alc_type,
+                    part_number,
+                    product_date,
+                    original_sub,
+                    now_string()
+                ))
+
+            # ---------------------------------------------
+            # 불량 스캔 이력
+            # ---------------------------------------------
+
+            conn.execute("""
+                INSERT INTO scans (
+
+                    main_category,
+                    sub_category,
+                    alc_code,
+                    alc_type,
+                    p_code,
+                    part_number,
+                    product_date,
+                    scanned_at
+
+                )
+
+                VALUES (
+                    '불량',
+                    '',
+                    ?, ?, ?, ?, ?, ?
+                )
+            """, (
+                alc_code,
+                alc_type,
+                p_code,
+                part_number,
+                product_date,
+                now_string()
+            ))
+
+            conn.commit()
+
+            stats = get_statistics(
+                conn
+            )
+
+            conn.close()
+
+            return jsonify({
+
+                "success": True,
+
+                "action":
+                    "REWORK",
+
+                "alc_code":
+                    alc_code,
+
+                "alc_type":
+                    alc_type,
+
+                "p_code":
+                    p_code,
+
+                **stats
+
+            })
+
+        # =================================================
+        # 일반 카테고리 저장
+        #
+        # 다른 카테고리 이동 확인을 받은 경우에도
+        # 새 이력으로 저장
+        # =================================================
+
+        scanned_at = (
+            now_string()
+        )
 
         conn.execute("""
             INSERT INTO scans (
@@ -1563,10 +1843,17 @@ def scan():
         conn.close()
 
         return jsonify({
-            "success": True,
+
+            "success":
+                True,
 
             "action":
                 "NORMAL",
+
+            "moved":
+                bool(
+                    latest
+                ),
 
             "main_category":
                 main_category,
@@ -1599,6 +1886,7 @@ def scan():
                 scanned_at,
 
             **stats
+
         })
 
     except Exception as e:
@@ -1606,8 +1894,11 @@ def scan():
         if conn:
 
             try:
+
                 conn.close()
+
             except Exception:
+
                 pass
 
         print(
@@ -1616,8 +1907,12 @@ def scan():
         )
 
         return jsonify({
+
             "success": False,
-            "error": str(e)
+
+            "error":
+                str(e)
+
         }), 500
 
 
@@ -1637,7 +1932,9 @@ def return_rework(item_id):
 
         item = conn.execute("""
             SELECT *
+
             FROM rework_items
+
             WHERE id = ?
         """, (
             item_id,
@@ -1648,27 +1945,33 @@ def return_rework(item_id):
             conn.close()
 
             return jsonify({
+
                 "success": False,
+
                 "error":
                     "리워크 제품을 찾을 수 없습니다."
+
             }), 404
 
-        if item[
-            "status"
-        ] != "REWORK":
+        if item["status"] != "REWORK":
 
             conn.close()
 
             return jsonify({
+
                 "success": False,
+
                 "error":
                     "현재 리워크 대기 상태가 아닙니다."
+
             }), 400
 
-        returned_at = now_string()
+        returned_at = (
+            now_string()
+        )
 
         # -------------------------------------------------
-        # 상태 변경
+        # RETURNED
         # -------------------------------------------------
 
         conn.execute("""
@@ -1687,7 +1990,7 @@ def return_rework(item_id):
         # -------------------------------------------------
         # 리워크 복귀는 중복 예외
         #
-        # 당일생산분에 다시 등록
+        # 당일생산으로 복귀
         # -------------------------------------------------
 
         conn.execute("""
@@ -1709,6 +2012,7 @@ def return_rework(item_id):
                 ?, ?, ?, ?, ?, ?, ?
             )
         """, (
+
             item[
                 "sub_category"
             ] or "완제품",
@@ -1734,6 +2038,7 @@ def return_rework(item_id):
             ],
 
             returned_at
+
         ))
 
         conn.commit()
@@ -1745,24 +2050,33 @@ def return_rework(item_id):
         conn.close()
 
         return jsonify({
+
             "success": True,
 
             "message":
-                "리워크 완료 후 당일생산분으로 복귀했습니다.",
+                "당일생산분으로 복귀했습니다.",
 
             **stats
+
         })
 
     except Exception as e:
 
         try:
+
             conn.close()
+
         except Exception:
+
             pass
 
         return jsonify({
+
             "success": False,
-            "error": str(e)
+
+            "error":
+                str(e)
+
         }), 500
 
 
@@ -1782,7 +2096,9 @@ def dispose_rework(item_id):
 
         item = conn.execute("""
             SELECT *
+
             FROM rework_items
+
             WHERE id = ?
         """, (
             item_id,
@@ -1793,21 +2109,25 @@ def dispose_rework(item_id):
             conn.close()
 
             return jsonify({
+
                 "success": False,
+
                 "error":
                     "리워크 제품을 찾을 수 없습니다."
+
             }), 404
 
-        if item[
-            "status"
-        ] != "REWORK":
+        if item["status"] != "REWORK":
 
             conn.close()
 
             return jsonify({
+
                 "success": False,
+
                 "error":
                     "현재 리워크 대기 상태가 아닙니다."
+
             }), 400
 
         conn.execute("""
@@ -1832,24 +2152,33 @@ def dispose_rework(item_id):
         conn.close()
 
         return jsonify({
+
             "success": True,
 
             "message":
                 "폐기 처리되었습니다.",
 
             **stats
+
         })
 
     except Exception as e:
 
         try:
+
             conn.close()
+
         except Exception:
+
             pass
 
         return jsonify({
+
             "success": False,
-            "error": str(e)
+
+            "error":
+                str(e)
+
         }), 500
 
 
@@ -1867,16 +2196,17 @@ def reset_data():
 
     try:
 
-        conn.execute("""
-            DELETE FROM scans
-        """)
+        conn.execute(
+            "DELETE FROM scans"
+        )
 
-        conn.execute("""
-            DELETE FROM rework_items
-        """)
+        conn.execute(
+            "DELETE FROM rework_items"
+        )
 
         conn.execute("""
             DELETE FROM sqlite_sequence
+
             WHERE name IN (
                 'scans',
                 'rework_items'
@@ -1887,21 +2217,31 @@ def reset_data():
         conn.close()
 
         return jsonify({
+
             "success": True,
+
             "message":
                 "전체 데이터가 초기화되었습니다."
+
         })
 
     except Exception as e:
 
         try:
+
             conn.close()
+
         except Exception:
+
             pass
 
         return jsonify({
+
             "success": False,
-            "error": str(e)
+
+            "error":
+                str(e)
+
         }), 500
 
 
@@ -1922,13 +2262,17 @@ def export_excel():
 
     scans = conn.execute("""
         SELECT *
+
         FROM scans
+
         ORDER BY id ASC
     """).fetchall()
 
     reworks = conn.execute("""
         SELECT *
+
         FROM rework_items
+
         ORDER BY id ASC
     """).fetchall()
 
@@ -1961,60 +2305,34 @@ def export_excel():
     ])
 
     ws.append([
-        "총재고(생산분 포함)",
-        stats[
-            "stock_frt"
-        ],
-        stats[
-            "stock_rr"
-        ],
-        stats[
-            "stock_total"
-        ]
+        "총재고",
+        stats["stock_frt"],
+        stats["stock_rr"],
+        stats["stock_total"]
     ])
 
     ws.append([
         "출고",
-        stats[
-            "shipped_frt"
-        ],
-        stats[
-            "shipped_rr"
-        ],
-        stats[
-            "shipped_total"
-        ]
+        stats["shipped_frt"],
+        stats["shipped_rr"],
+        stats["shipped_total"]
     ])
 
     ws.append([
         "현재재고",
-        stats[
-            "balance_frt"
-        ],
-        stats[
-            "balance_rr"
-        ],
-        stats[
-            "balance_total"
-        ]
+        stats["balance_frt"],
+        stats["balance_rr"],
+        stats["balance_total"]
     ])
 
     ws.append([
-        "불량 이력",
-        stats[
-            "defective_frt"
-        ],
-        stats[
-            "defective_rr"
-        ],
+        "불량 횟수",
+        stats["defective_frt"],
+        stats["defective_rr"],
         (
-            stats[
-                "defective_frt"
-            ]
+            stats["defective_frt"]
             +
-            stats[
-                "defective_rr"
-            ]
+            stats["defective_rr"]
         )
     ])
 
@@ -2022,27 +2340,14 @@ def export_excel():
         "리워크 대기",
         "",
         "",
-        stats[
-            "rework_waiting"
-        ]
-    ])
-
-    ws.append([
-        "리워크 완료",
-        "",
-        "",
-        stats[
-            "rework_returned"
-        ]
+        stats["rework_waiting"]
     ])
 
     ws.append([
         "폐기",
         "",
         "",
-        stats[
-            "disposed_total"
-        ]
+        stats["disposed_total"]
     ])
 
     # =====================================================
@@ -2068,37 +2373,19 @@ def export_excel():
     for row in scans:
 
         ws_scan.append([
-            row[
-                "id"
-            ],
-            row[
-                "main_category"
-            ],
-            row[
-                "sub_category"
-            ],
-            row[
-                "alc_type"
-            ],
-            row[
-                "alc_code"
-            ],
-            row[
-                "p_code"
-            ],
-            row[
-                "part_number"
-            ],
-            row[
-                "product_date"
-            ],
-            row[
-                "scanned_at"
-            ]
+            row["id"],
+            row["main_category"],
+            row["sub_category"],
+            row["alc_type"],
+            row["alc_code"],
+            row["p_code"],
+            row["part_number"],
+            row["product_date"],
+            row["scanned_at"]
         ])
 
     # =====================================================
-    # 리워크 / 폐기
+    # 리워크/폐기
     # =====================================================
 
     ws_rework = wb.create_sheet(
@@ -2112,7 +2399,7 @@ def export_excel():
         "ALC",
         "부품번호",
         "생산일자",
-        "제품종류",
+        "제품",
         "상태",
         "불량횟수",
         "첫 불량",
@@ -2122,60 +2409,35 @@ def export_excel():
 
     for row in reworks:
 
-        status_text = {
+        status_name = {
+
             "REWORK":
                 "리워크 대기",
 
             "RETURNED":
-                "리워크 완료",
+                "복귀 완료",
 
             "DISPOSED":
                 "폐기"
 
         }.get(
-            row[
-                "status"
-            ],
-            row[
-                "status"
-            ]
+            row["status"],
+            row["status"]
         )
 
         ws_rework.append([
-            row[
-                "id"
-            ],
-            row[
-                "p_code"
-            ],
-            row[
-                "alc_type"
-            ],
-            row[
-                "alc_code"
-            ],
-            row[
-                "part_number"
-            ],
-            row[
-                "product_date"
-            ],
-            row[
-                "sub_category"
-            ],
-            status_text,
-            row[
-                "defect_count"
-            ],
-            row[
-                "first_defect_at"
-            ],
-            row[
-                "returned_at"
-            ],
-            row[
-                "disposed_at"
-            ]
+            row["id"],
+            row["p_code"],
+            row["alc_type"],
+            row["alc_code"],
+            row["part_number"],
+            row["product_date"],
+            row["sub_category"],
+            status_name,
+            row["defect_count"],
+            row["first_defect_at"],
+            row["returned_at"],
+            row["disposed_at"]
         ])
 
     # =====================================================
@@ -2197,15 +2459,9 @@ def export_excel():
     ]:
 
         ws_alc.append([
-            row[
-                "alc_type"
-            ],
-            row[
-                "alc_code"
-            ],
-            row[
-                "count"
-            ]
+            row["alc_type"],
+            row["alc_code"],
+            row["count"]
         ])
 
     # =====================================================
@@ -2261,9 +2517,13 @@ def export_excel():
 
     output = BytesIO()
 
-    wb.save(output)
+    wb.save(
+        output
+    )
 
-    output.seek(0)
+    output.seek(
+        0
+    )
 
     filename = (
         "barcode_report_"
@@ -2276,27 +2536,29 @@ def export_excel():
     )
 
     return send_file(
+
         output,
+
         as_attachment=True,
-        download_name=filename,
+
+        download_name=
+            filename,
+
         mimetype=(
             "application/"
             "vnd.openxmlformats-officedocument."
             "spreadsheetml.sheet"
         )
+
     )
 
 
 # =========================================================
-# DB 시작
+# 시작
 # =========================================================
 
 init_db()
 
-
-# =========================================================
-# 로컬 실행
-# =========================================================
 
 if __name__ == "__main__":
 
