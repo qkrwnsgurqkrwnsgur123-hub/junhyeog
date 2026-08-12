@@ -12,44 +12,65 @@
 
 <title>바코드 취합 시스템</title>
 
+
 <style>
 
 * {
     box-sizing: border-box;
 }
 
+
 body {
-    font-family: Arial, sans-serif;
+
+    font-family:
+        Arial,
+        sans-serif;
+
     margin: 0;
-    padding: 20px 10px;
-    text-align: center;
-    background: #f5f5f5;
+
+    padding:
+        20px 10px;
+
+    text-align:
+        center;
+
+    background:
+        #f5f5f5;
 }
+
 
 h1 {
-    margin-bottom: 25px;
+    margin-bottom:
+        25px;
 }
+
 
 h2 {
-    margin-top: 35px;
+    margin-top:
+        35px;
 }
 
 
-/* =========================
-   카드 공통
-========================= */
+/* =================================================
+   카드
+================================================= */
 
 .card {
 
-    background: white;
+    background:
+        white;
 
-    max-width: 650px;
+    max-width:
+        650px;
 
-    margin: 12px auto;
+    margin:
+        12px auto;
 
-    padding: 18px;
+    padding:
+        18px;
 
-    border-radius: 15px;
+    border-radius:
+        15px;
 
     box-shadow:
         0 2px 8px rgba(0,0,0,0.08);
@@ -58,21 +79,25 @@ h2 {
 
 .big-number {
 
-    font-size: 48px;
+    font-size:
+        48px;
 
-    font-weight: bold;
+    font-weight:
+        bold;
 }
 
 
-/* =========================
-   카테고리
-========================= */
+/* =================================================
+   메뉴
+================================================= */
 
 .category-container {
 
-    max-width: 650px;
+    max-width:
+        650px;
 
-    margin: auto;
+    margin:
+        auto;
 }
 
 
@@ -80,289 +105,379 @@ h2 {
 .sub-button,
 .type-button {
 
-    width: 100%;
+    width:
+        100%;
 
-    border: none;
+    border:
+        none;
 
-    border-radius: 10px;
+    border-radius:
+        10px;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 
-    font-weight: bold;
+    font-weight:
+        bold;
 }
 
 
 .main-button {
 
-    padding: 16px;
+    padding:
+        16px;
 
-    margin: 6px 0;
+    margin:
+        6px 0;
 
-    background: #222;
+    background:
+        #222;
 
-    color: white;
+    color:
+        white;
 
-    font-size: 20px;
+    font-size:
+        20px;
 }
 
 
 .sub-button {
 
-    padding: 13px;
+    padding:
+        13px;
 
-    margin: 4px 0;
+    margin:
+        4px 0;
 
-    background: #e5e5e5;
+    background:
+        #e5e5e5;
 
-    font-size: 18px;
+    font-size:
+        18px;
 }
 
 
 .type-button {
 
-    padding: 12px;
+    padding:
+        12px;
 
-    margin: 3px 0;
+    margin:
+        3px 0;
 
-    background: #f3f3f3;
+    background:
+        #f3f3f3;
 
-    font-size: 17px;
+    font-size:
+        17px;
 }
 
 
 .level1,
 .level2 {
 
-    display: none;
+    display:
+        none;
 
-    padding: 6px;
+    padding:
+        6px;
 
-    background: white;
+    background:
+        white;
 
-    border-radius: 10px;
+    border-radius:
+        10px;
 }
 
 
-/* =========================
-   선택 표시
-========================= */
+/* =================================================
+   선택
+================================================= */
 
 #selected-category {
 
-    max-width: 650px;
+    max-width:
+        650px;
 
-    margin: 15px auto;
+    margin:
+        15px auto;
 
-    padding: 15px;
+    padding:
+        15px;
 
-    background: white;
+    background:
+        white;
 
-    border-radius: 12px;
+    border-radius:
+        12px;
 
-    font-weight: bold;
+    font-weight:
+        bold;
 }
 
 
-/* =========================
+/* =================================================
    카메라
-========================= */
+================================================= */
 
 #reader {
 
-    width: 100%;
+    width:
+        100%;
 
-    max-width: 500px;
+    max-width:
+        500px;
 
-    margin: 20px auto;
+    margin:
+        20px auto;
 
-    background: black;
+    background:
+        black;
 
-    border-radius: 15px;
+    border-radius:
+        15px;
 
-    overflow: hidden;
+    overflow:
+        hidden;
 }
 
 
 #scan-button {
 
-    width: 100%;
+    width:
+        100%;
 
-    max-width: 650px;
+    max-width:
+        650px;
 
-    padding: 16px;
+    padding:
+        16px;
 
-    border: none;
+    border:
+        none;
 
-    border-radius: 12px;
+    border-radius:
+        12px;
 
-    background: #222;
+    background:
+        #222;
 
-    color: white;
+    color:
+        white;
 
-    font-size: 20px;
+    font-size:
+        20px;
 
-    font-weight: bold;
+    font-weight:
+        bold;
 
-    cursor: pointer;
+    cursor:
+        pointer;
 }
 
 
-/* =========================
+/* =================================================
    결과
-========================= */
+================================================= */
 
 #result {
 
-    max-width: 650px;
+    max-width:
+        650px;
 
-    margin: 20px auto;
+    margin:
+        20px auto;
 
-    padding: 20px;
+    padding:
+        20px;
 
-    background: white;
+    background:
+        white;
 
-    border-radius: 15px;
+    border-radius:
+        15px;
 
-    line-height: 1.7;
+    line-height:
+        1.7;
 
-    font-weight: bold;
+    font-weight:
+        bold;
 }
 
 
 .alc-big {
 
-    font-size: 52px;
+    font-size:
+        52px;
 
-    font-weight: 900;
+    font-weight:
+        900;
 
-    margin-top: 10px;
+    margin-top:
+        10px;
 }
 
 
-/* =========================
-   현황
-========================= */
+/* =================================================
+   통계
+================================================= */
 
 .grid {
 
-    display: grid;
+    display:
+        grid;
 
     grid-template-columns:
         repeat(2, 1fr);
 
-    gap: 10px;
+    gap:
+        10px;
 
-    max-width: 650px;
+    max-width:
+        650px;
 
-    margin: auto;
+    margin:
+        auto;
 }
 
 
 .stat {
 
-    background: white;
+    background:
+        white;
 
-    padding: 15px;
+    padding:
+        15px;
 
-    border-radius: 12px;
+    border-radius:
+        12px;
 }
 
 
 .stat-name {
 
-    color: #666;
+    color:
+        #666;
 
-    font-size: 14px;
+    font-size:
+        14px;
 }
 
 
 .stat-number {
 
-    font-size: 28px;
+    font-size:
+        28px;
 
-    font-weight: bold;
+    font-weight:
+        bold;
 
-    margin-top: 5px;
+    margin-top:
+        5px;
 }
 
 
-/* =========================
-   현재 재고 합계
-========================= */
+/* =================================================
+   현재재고
+================================================= */
 
 .balance {
 
-    max-width: 650px;
+    max-width:
+        650px;
 
-    margin: 20px auto;
+    margin:
+        20px auto;
 
-    background: white;
+    background:
+        white;
 
-    border-radius: 16px;
+    border-radius:
+        16px;
 
-    padding: 22px;
+    padding:
+        22px;
 }
 
 
 .balance-main {
 
-    font-size: 50px;
+    font-size:
+        50px;
 
-    font-weight: 900;
+    font-weight:
+        900;
 }
 
 
-/* =========================
+/* =================================================
    Excel
-========================= */
+================================================= */
 
 .excel-button {
 
-    display: block;
+    display:
+        block;
 
-    max-width: 650px;
+    max-width:
+        650px;
 
-    margin: 25px auto;
+    margin:
+        25px auto;
 
-    padding: 16px;
+    padding:
+        16px;
 
-    background: #217346;
+    background:
+        #217346;
 
-    color: white;
+    color:
+        white;
 
-    text-decoration: none;
+    text-decoration:
+        none;
 
-    border-radius: 12px;
+    border-radius:
+        12px;
 
-    font-size: 20px;
+    font-size:
+        20px;
 
-    font-weight: bold;
+    font-weight:
+        bold;
 }
 
 
-/* =========================
+/* =================================================
    표
-========================= */
+================================================= */
 
 .table-wrapper {
 
-    width: 100%;
+    width:
+        100%;
 
-    overflow-x: auto;
+    overflow-x:
+        auto;
 }
 
 
 table {
 
-    width: 100%;
+    width:
+        100%;
 
-    max-width: 1050px;
+    max-width:
+        1050px;
 
-    margin: auto;
+    margin:
+        auto;
 
-    border-collapse: collapse;
+    border-collapse:
+        collapse;
 
-    background: white;
+    background:
+        white;
 }
 
 
@@ -389,9 +504,11 @@ th {
     th,
     td {
 
-        font-size: 12px;
+        font-size:
+            12px;
 
-        white-space: nowrap;
+        white-space:
+            nowrap;
     }
 
 }
@@ -409,9 +526,9 @@ th {
 </h1>
 
 
-<!-- =====================================================
-     당일 생산량
-===================================================== -->
+<!-- =================================================
+     오늘 생산
+================================================= -->
 
 <div class="card">
 
@@ -429,16 +546,14 @@ th {
 </div>
 
 
-<!-- =====================================================
+<!-- =================================================
      메뉴
-===================================================== -->
+================================================= -->
 
 <div class="category-container">
 
 
-<!-- =====================================================
-     1. 당일생산분
-===================================================== -->
+<!-- 1 당일생산 -->
 
 <button
     class="main-button"
@@ -454,89 +569,87 @@ th {
 >
 
 
-    <button
-        class="sub-button"
-        onclick="toggle('production-finished')"
-    >
-        1-1. 완제품 ▼
-    </button>
+<button
+    class="sub-button"
+    onclick="toggle('production-finished')"
+>
+1-1. 완제품 ▼
+</button>
 
 
-    <div
-        id="production-finished"
-        class="level2"
-    >
+<div
+    id="production-finished"
+    class="level2"
+>
 
-        <button
-            class="type-button"
-            onclick="selectCategory(
-                '당일생산분',
-                '완제품',
-                'FRT'
-            )"
-        >
-            FRT
-        </button>
-
-
-        <button
-            class="type-button"
-            onclick="selectCategory(
-                '당일생산분',
-                '완제품',
-                'RR'
-            )"
-        >
-            RR
-        </button>
-
-    </div>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        '당일생산분',
+        '완제품',
+        'FRT'
+    )"
+>
+FRT
+</button>
 
 
-    <button
-        class="sub-button"
-        onclick="toggle('production-semi')"
-    >
-        1-2. 반제품 ▼
-    </button>
-
-
-    <div
-        id="production-semi"
-        class="level2"
-    >
-
-        <button
-            class="type-button"
-            onclick="selectCategory(
-                '당일생산분',
-                '반제품',
-                'FRT'
-            )"
-        >
-            FRT
-        </button>
-
-
-        <button
-            class="type-button"
-            onclick="selectCategory(
-                '당일생산분',
-                '반제품',
-                'RR'
-            )"
-        >
-            RR
-        </button>
-
-    </div>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        '당일생산분',
+        '완제품',
+        'RR'
+    )"
+>
+RR
+</button>
 
 </div>
 
 
-<!-- =====================================================
-     2. 총재고
-===================================================== -->
+<button
+    class="sub-button"
+    onclick="toggle('production-semi')"
+>
+1-2. 반제품 ▼
+</button>
+
+
+<div
+    id="production-semi"
+    class="level2"
+>
+
+<button
+    class="type-button"
+    onclick="selectCategory(
+        '당일생산분',
+        '반제품',
+        'FRT'
+    )"
+>
+FRT
+</button>
+
+
+<button
+    class="type-button"
+    onclick="selectCategory(
+        '당일생산분',
+        '반제품',
+        'RR'
+    )"
+>
+RR
+</button>
+
+</div>
+
+</div>
+
+
+<!-- 2 총재고 -->
 
 <button
     class="main-button"
@@ -552,89 +665,87 @@ th {
 >
 
 
-    <button
-        class="sub-button"
-        onclick="toggle('stock-finished')"
-    >
-        2-1. 완제품 ▼
-    </button>
+<button
+    class="sub-button"
+    onclick="toggle('stock-finished')"
+>
+2-1. 완제품 ▼
+</button>
 
 
-    <div
-        id="stock-finished"
-        class="level2"
-    >
+<div
+    id="stock-finished"
+    class="level2"
+>
 
-        <button
-            class="type-button"
-            onclick="selectCategory(
-                '총재고',
-                '완제품',
-                'FRT'
-            )"
-        >
-            FRT
-        </button>
-
-
-        <button
-            class="type-button"
-            onclick="selectCategory(
-                '총재고',
-                '완제품',
-                'RR'
-            )"
-        >
-            RR
-        </button>
-
-    </div>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        '총재고',
+        '완제품',
+        'FRT'
+    )"
+>
+FRT
+</button>
 
 
-    <button
-        class="sub-button"
-        onclick="toggle('stock-semi')"
-    >
-        2-2. 반제품 ▼
-    </button>
-
-
-    <div
-        id="stock-semi"
-        class="level2"
-    >
-
-        <button
-            class="type-button"
-            onclick="selectCategory(
-                '총재고',
-                '반제품',
-                'FRT'
-            )"
-        >
-            FRT
-        </button>
-
-
-        <button
-            class="type-button"
-            onclick="selectCategory(
-                '총재고',
-                '반제품',
-                'RR'
-            )"
-        >
-            RR
-        </button>
-
-    </div>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        '총재고',
+        '완제품',
+        'RR'
+    )"
+>
+RR
+</button>
 
 </div>
 
 
-<!-- =====================================================
-     3. 출고
-===================================================== -->
+<button
+    class="sub-button"
+    onclick="toggle('stock-semi')"
+>
+2-2. 반제품 ▼
+</button>
+
+
+<div
+    id="stock-semi"
+    class="level2"
+>
+
+<button
+    class="type-button"
+    onclick="selectCategory(
+        '총재고',
+        '반제품',
+        'FRT'
+    )"
+>
+FRT
+</button>
+
+
+<button
+    class="type-button"
+    onclick="selectCategory(
+        '총재고',
+        '반제품',
+        'RR'
+    )"
+>
+RR
+</button>
+
+</div>
+
+</div>
+
+
+<!-- 3 출고 -->
 
 <button
     class="main-button"
@@ -649,35 +760,33 @@ th {
     class="level1"
 >
 
-    <button
-        class="type-button"
-        onclick="selectCategory(
-            '출고',
-            '',
-            'FRT'
-        )"
-    >
-        3-1. FRT
-    </button>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        '출고',
+        '',
+        'FRT'
+    )"
+>
+3-1. FRT
+</button>
 
 
-    <button
-        class="type-button"
-        onclick="selectCategory(
-            '출고',
-            '',
-            'RR'
-        )"
-    >
-        3-2. RR
-    </button>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        '출고',
+        '',
+        'RR'
+    )"
+>
+3-2. RR
+</button>
 
 </div>
 
 
-<!-- =====================================================
-     4. 불량
-===================================================== -->
+<!-- 4 불량 -->
 
 <button
     class="main-button"
@@ -692,28 +801,28 @@ th {
     class="level1"
 >
 
-    <button
-        class="type-button"
-        onclick="selectCategory(
-            '불량',
-            '',
-            'FRT'
-        )"
-    >
-        4-1. FRT
-    </button>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        '불량',
+        '',
+        'FRT'
+    )"
+>
+4-1. FRT
+</button>
 
 
-    <button
-        class="type-button"
-        onclick="selectCategory(
-            '불량',
-            '',
-            'RR'
-        )"
-    >
-        4-2. RR
-    </button>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        '불량',
+        '',
+        'RR'
+    )"
+>
+4-2. RR
+</button>
 
 </div>
 
@@ -742,9 +851,9 @@ th {
 </div>
 
 
-<!-- =====================================================
-     현재 재고 합계
-===================================================== -->
+<!-- =================================================
+     현재재고
+================================================= -->
 
 <h2>
 📦 현재 재고 합계
@@ -753,60 +862,62 @@ th {
 
 <div class="balance">
 
-    <div>
-        총재고 - 출고
-    </div>
+<div>
+총재고 - 출고
+</div>
 
 
-    <div
-        class="balance-main"
-        id="balance-total"
-    >
-        {{ balance_total }}개
-    </div>
+<div
+    class="balance-main"
+    id="balance-total"
+>
+{{ balance_total }}개
+</div>
 
 
-    <div class="grid">
-
-        <div class="stat">
-
-            <div class="stat-name">
-                FRT
-            </div>
-
-            <div
-                class="stat-number"
-                id="balance-frt"
-            >
-                {{ balance_frt }}
-            </div>
-
-        </div>
+<div class="grid">
 
 
-        <div class="stat">
+<div class="stat">
 
-            <div class="stat-name">
-                RR
-            </div>
+<div class="stat-name">
+FRT
+</div>
 
-            <div
-                class="stat-number"
-                id="balance-rr"
-            >
-                {{ balance_rr }}
-            </div>
-
-        </div>
-
-    </div>
+<div
+    class="stat-number"
+    id="balance-frt"
+>
+{{ balance_frt }}
+</div>
 
 </div>
 
 
-<!-- =====================================================
+<div class="stat">
+
+<div class="stat-name">
+RR
+</div>
+
+<div
+    class="stat-number"
+    id="balance-rr"
+>
+{{ balance_rr }}
+</div>
+
+</div>
+
+
+</div>
+
+</div>
+
+
+<!-- =================================================
      총재고
-===================================================== -->
+================================================= -->
 
 <h2>
 🗃️ 누적 총재고
@@ -815,63 +926,77 @@ th {
 
 <div class="grid">
 
-    <div class="stat">
 
-        <div class="stat-name">
-            완제품 FRT
-        </div>
+<div class="stat">
 
-        <div class="stat-number">
-            {{ stock_finished_frt }}
-        </div>
+<div class="stat-name">
+완제품 FRT
+</div>
 
-    </div>
-
-
-    <div class="stat">
-
-        <div class="stat-name">
-            완제품 RR
-        </div>
-
-        <div class="stat-number">
-            {{ stock_finished_rr }}
-        </div>
-
-    </div>
-
-
-    <div class="stat">
-
-        <div class="stat-name">
-            반제품 FRT
-        </div>
-
-        <div class="stat-number">
-            {{ stock_semi_frt }}
-        </div>
-
-    </div>
-
-
-    <div class="stat">
-
-        <div class="stat-name">
-            반제품 RR
-        </div>
-
-        <div class="stat-number">
-            {{ stock_semi_rr }}
-        </div>
-
-    </div>
+<div
+    class="stat-number"
+    id="stock-finished-frt"
+>
+{{ stock_finished_frt }}
+</div>
 
 </div>
 
 
-<!-- =====================================================
+<div class="stat">
+
+<div class="stat-name">
+완제품 RR
+</div>
+
+<div
+    class="stat-number"
+    id="stock-finished-rr"
+>
+{{ stock_finished_rr }}
+</div>
+
+</div>
+
+
+<div class="stat">
+
+<div class="stat-name">
+반제품 FRT
+</div>
+
+<div
+    class="stat-number"
+    id="stock-semi-frt"
+>
+{{ stock_semi_frt }}
+</div>
+
+</div>
+
+
+<div class="stat">
+
+<div class="stat-name">
+반제품 RR
+</div>
+
+<div
+    class="stat-number"
+    id="stock-semi-rr"
+>
+{{ stock_semi_rr }}
+</div>
+
+</div>
+
+
+</div>
+
+
+<!-- =================================================
      출고
-===================================================== -->
+================================================= -->
 
 <h2>
 🚚 누적 출고
@@ -880,43 +1005,45 @@ th {
 
 <div class="grid">
 
-    <div class="stat">
 
-        <div class="stat-name">
-            FRT
-        </div>
+<div class="stat">
 
-        <div
-            class="stat-number"
-            id="shipped-frt"
-        >
-            {{ shipped_frt }}
-        </div>
+<div class="stat-name">
+FRT
+</div>
 
-    </div>
-
-
-    <div class="stat">
-
-        <div class="stat-name">
-            RR
-        </div>
-
-        <div
-            class="stat-number"
-            id="shipped-rr"
-        >
-            {{ shipped_rr }}
-        </div>
-
-    </div>
+<div
+    class="stat-number"
+    id="shipped-frt"
+>
+{{ shipped_frt }}
+</div>
 
 </div>
 
 
-<!-- =====================================================
+<div class="stat">
+
+<div class="stat-name">
+RR
+</div>
+
+<div
+    class="stat-number"
+    id="shipped-rr"
+>
+{{ shipped_rr }}
+</div>
+
+</div>
+
+
+</div>
+
+
+<!-- =================================================
      불량
-===================================================== -->
+================================================= -->
 
 <h2>
 ❌ 불량 현황
@@ -925,43 +1052,45 @@ th {
 
 <div class="grid">
 
-    <div class="stat">
 
-        <div class="stat-name">
-            FRT
-        </div>
+<div class="stat">
 
-        <div
-            class="stat-number"
-            id="defective-frt"
-        >
-            {{ defective_frt }}
-        </div>
+<div class="stat-name">
+FRT
+</div>
 
-    </div>
-
-
-    <div class="stat">
-
-        <div class="stat-name">
-            RR
-        </div>
-
-        <div
-            class="stat-number"
-            id="defective-rr"
-        >
-            {{ defective_rr }}
-        </div>
-
-    </div>
+<div
+    class="stat-number"
+    id="defective-frt"
+>
+{{ defective_frt }}
+</div>
 
 </div>
 
 
-<!-- =====================================================
+<div class="stat">
+
+<div class="stat-name">
+RR
+</div>
+
+<div
+    class="stat-number"
+    id="defective-rr"
+>
+{{ defective_rr }}
+</div>
+
+</div>
+
+
+</div>
+
+
+<!-- =================================================
      Excel
-===================================================== -->
+================================================= -->
 
 <a
     href="/export.xlsx"
@@ -971,9 +1100,9 @@ th {
 </a>
 
 
-<!-- =====================================================
-     ALC별 수량
-===================================================== -->
+<!-- =================================================
+     ALC
+================================================= -->
 
 <h2>
 🔖 ALC별 수량
@@ -1026,9 +1155,64 @@ th {
 </div>
 
 
-<!-- =====================================================
+<!-- =================================================
+     오늘 ALC
+================================================= -->
+
+<h2>
+📅 오늘의 ALC 수량
+</h2>
+
+
+<div class="table-wrapper">
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>구분</th>
+<th>ALC</th>
+<th>오늘 수량</th>
+
+</tr>
+
+</thead>
+
+
+<tbody>
+
+{% for row in today_alc_counts %}
+
+<tr>
+
+<td>
+{{ row["alc_type"] }}
+</td>
+
+<td>
+{{ row["alc_code"] }}
+</td>
+
+<td>
+{{ row["count"] }}개
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+</div>
+
+
+<!-- =================================================
      생산일자
-===================================================== -->
+================================================= -->
 
 <h2>
 📅 생산일자별 수량
@@ -1076,9 +1260,9 @@ th {
 </div>
 
 
-<!-- =====================================================
-     최근 스캔
-===================================================== -->
+<!-- =================================================
+     최근
+================================================= -->
 
 <h2>
 📋 최근 스캔 기록
@@ -1094,19 +1278,12 @@ th {
 <tr>
 
 <th>번호</th>
-
 <th>업무</th>
-
 <th>제품</th>
-
 <th>ALC구분</th>
-
 <th>ALC</th>
-
 <th>부품번호</th>
-
 <th>생산일자</th>
-
 <th>시간</th>
 
 </tr>
@@ -1181,7 +1358,7 @@ let selectedAlcType = "";
 
 
 // =========================================================
-// HTML 안전 처리
+// 안전 HTML
 // =========================================================
 
 function escapeHtml(value) {
@@ -1213,7 +1390,9 @@ function toggle(id) {
         element.style.display =
             "none";
 
-    } else {
+    }
+
+    else {
 
         element.style.display =
             "block";
@@ -1223,7 +1402,7 @@ function toggle(id) {
 
 
 // =========================================================
-// 카테고리 선택
+// 선택
 // =========================================================
 
 function selectCategory(
@@ -1249,27 +1428,28 @@ function selectCategory(
     if (subCategory) {
 
         text +=
-            " → " +
-            subCategory;
+            " → "
+            + subCategory;
     }
 
 
     text +=
-        " → " +
-        alcType;
+        " → "
+        + alcType;
 
 
     document.getElementById(
         "selected-category"
     ).innerText =
-        "현재 선택: " + text;
+        "현재 선택: "
+        + text;
 
 
     document.getElementById(
         "result"
     ).innerText =
-        "✅ 선택 완료\n\n" +
-        text;
+        "✅ 선택 완료\n\n"
+        + text;
 }
 
 
@@ -1299,7 +1479,7 @@ function stopCamera() {
 
 
 // =========================================================
-// 표 업데이트
+// 표
 // =========================================================
 
 function updateAlcTable(rows) {
@@ -1414,7 +1594,7 @@ function updateRecentTable(rows) {
 
 
 // =========================================================
-// 스캔 시작
+// 시작
 // =========================================================
 
 async function startScanner() {
@@ -1442,6 +1622,12 @@ async function startScanner() {
 
     alreadyScanning =
         true;
+
+
+    document.getElementById(
+        "result"
+    ).innerText =
+        "📷 카메라 준비 중...";
 
 
     if (
@@ -1484,6 +1670,7 @@ async function startScanner() {
             "autoplay",
             ""
         );
+
 
         video.setAttribute(
             "playsinline",
@@ -1537,7 +1724,9 @@ async function startScanner() {
         );
 
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
 
         stopCamera();
@@ -1546,15 +1735,15 @@ async function startScanner() {
         document.getElementById(
             "result"
         ).innerText =
-            "❌ 카메라 오류\n\n" +
-            error.message;
+            "❌ 카메라 오류\n\n"
+            + error.message;
     }
 
 }
 
 
 // =========================================================
-// 스캔
+// 실제 스캔
 // =========================================================
 
 async function scanFrame(video) {
@@ -1582,6 +1771,24 @@ async function scanFrame(video) {
 
             const barcodeData =
                 barcodes[0].rawValue;
+
+
+            // =================================================
+            // 원본 데이터 확인 기능
+            // =================================================
+
+            console.log(
+                "바코드 원본 데이터:",
+                barcodeData
+            );
+
+
+            alert(
+                "바코드 원본 데이터:\n\n"
+                + JSON.stringify(
+                    barcodeData
+                )
+            );
 
 
             document.getElementById(
@@ -1664,14 +1871,24 @@ async function scanFrame(video) {
                     )}
 
                     ${data.sub_category
-                        ? " → " +
-                        escapeHtml(
+                        ? " → "
+                        + escapeHtml(
                             data.sub_category
                         )
                         : ""
                     }
 
+                    <br><br>
+
+                    ALC 누적:
+                    ${data.alc_total}개
+
                     <br>
+
+                    오늘:
+                    ${data.alc_today}개
+
+                    <br><br>
 
                     부품번호:
                     ${escapeHtml(
@@ -1688,15 +1905,12 @@ async function scanFrame(video) {
                 `;
 
 
-                // =========================================
-                // 합계 실시간 갱신
-                // =========================================
-
+                // 현재 재고
                 document.getElementById(
                     "balance-total"
                 ).innerText =
-                    data.balance_total +
-                    "개";
+                    data.balance_total
+                    + "개";
 
 
                 document.getElementById(
@@ -1711,13 +1925,40 @@ async function scanFrame(video) {
                     data.balance_rr;
 
 
+                // 생산
                 document.getElementById(
                     "today-production"
                 ).innerText =
-                    data.today_production +
-                    "개";
+                    data.today_production
+                    + "개";
 
 
+                // 총재고
+                document.getElementById(
+                    "stock-finished-frt"
+                ).innerText =
+                    data.stock_finished_frt;
+
+
+                document.getElementById(
+                    "stock-finished-rr"
+                ).innerText =
+                    data.stock_finished_rr;
+
+
+                document.getElementById(
+                    "stock-semi-frt"
+                ).innerText =
+                    data.stock_semi_frt;
+
+
+                document.getElementById(
+                    "stock-semi-rr"
+                ).innerText =
+                    data.stock_semi_rr;
+
+
+                // 출고
                 document.getElementById(
                     "shipped-frt"
                 ).innerText =
@@ -1730,6 +1971,7 @@ async function scanFrame(video) {
                     data.shipped_rr;
 
 
+                // 불량
                 document.getElementById(
                     "defective-frt"
                 ).innerText =
@@ -1764,10 +2006,10 @@ async function scanFrame(video) {
             document.getElementById(
                 "result"
             ).innerText =
-                "❌ 저장 실패\n\n" +
-                (
-                    data.error ||
-                    "알 수 없는 오류"
+                "❌ 저장 실패\n\n"
+                + (
+                    data.error
+                    || "알 수 없는 오류"
                 );
 
 
@@ -1775,7 +2017,9 @@ async function scanFrame(video) {
         }
 
 
-    } catch (error) {
+    }
+
+    catch (error) {
 
 
         stopCamera();
@@ -1784,8 +2028,8 @@ async function scanFrame(video) {
         document.getElementById(
             "result"
         ).innerText =
-            "❌ 오류\n\n" +
-            error.message;
+            "❌ 오류\n\n"
+            + error.message;
 
 
         return;
@@ -1806,6 +2050,7 @@ async function scanFrame(video) {
 
 
 </script>
+
 
 </body>
 
