@@ -34,10 +34,11 @@ BASE_DIR = os.path.dirname(
 )
 
 
-# Railway에서는
+# Railway:
 # DB_DIR=/data
 #
-# 로컬에서는 app.py 옆에 barcode.db 저장
+# 로컬:
+# app.py가 있는 폴더 사용
 DB_DIR = os.environ.get(
     "DB_DIR",
     BASE_DIR
@@ -131,10 +132,6 @@ def init_db():
     """)
 
 
-    # =====================================================
-    # 기존 DB 컬럼 확인
-    # =====================================================
-
     columns = conn.execute(
         "PRAGMA table_info(scans)"
     ).fetchall()
@@ -148,36 +145,24 @@ def init_db():
 
     required_columns = {
 
-        "main_category":
-            "TEXT",
+        "main_category": "TEXT",
 
-        "sub_category":
-            "TEXT",
+        "sub_category": "TEXT",
 
-        "alc_code":
-            "TEXT",
+        "alc_code": "TEXT",
 
-        "alc_type":
-            "TEXT",
+        "alc_type": "TEXT",
 
-        "p_code":
-            "TEXT",
+        "p_code": "TEXT",
 
-        "part_number":
-            "TEXT",
+        "part_number": "TEXT",
 
-        "product_date":
-            "TEXT",
+        "product_date": "TEXT",
 
-        "scanned_at":
-            "TEXT"
+        "scanned_at": "TEXT"
 
     }
 
-
-    # =====================================================
-    # 없는 컬럼 자동 추가
-    # =====================================================
 
     for (
         column_name,
@@ -197,10 +182,7 @@ def init_db():
             )
 
 
-    # =====================================================
-    # 예전 재고 이름 통일
-    # =====================================================
-
+    # 기존 '재고' 기록을 '총재고'로 통일
     conn.execute("""
         UPDATE scans
 
@@ -225,14 +207,17 @@ def clean_field(
 
     return (
         field
+
         .replace(
             "\x1e",
             ""
         )
+
         .replace(
             "\x04",
             ""
         )
+
         .strip()
     )
 
@@ -246,16 +231,20 @@ def parse_spk0_barcode(
 ):
 
     """
-    SPK0(start) 라벨 예:
+    예:
 
     82SU2XBU10NNB
     \x1d
     L4-EEC7X-00000187
 
-    이 형식은 일반 ALC S 필드가 없음.
 
-    SPK0로 표시하고
-    FRT 전용으로 처리한다.
+    이 형식은 ALC 필드가 없음.
+
+    표시:
+        SPK0
+
+    분류:
+        FRT
     """
 
 
@@ -263,10 +252,6 @@ def parse_spk0_barcode(
 
         return None
 
-
-    # =====================================================
-    # 제어문자로 필드 분리
-    # =====================================================
 
     fields = []
 
@@ -299,10 +284,6 @@ def parse_spk0_barcode(
     )
 
 
-    # =====================================================
-    # 부품번호 찾기
-    # =====================================================
-
     part_number = ""
 
 
@@ -328,16 +309,8 @@ def parse_spk0_barcode(
         return None
 
 
-    # =====================================================
-    # SPK0 계열 확인
-    #
-    # 현재 확인된 실제 데이터:
-    #
+    # 현재 확인된 SPK0 형식:
     # 82SU2XBU10NNB
-    #
-    # 너무 넓게 잡지 않도록
-    # 82SU 로 시작하는 형식만 SPK0 처리
-    # =====================================================
 
     if not re.fullmatch(
         r"82SU[A-Z0-9]+NNB",
@@ -378,8 +351,6 @@ def parse_barcode(
     """
     일반 ALC 규칙
 
-    반드시 S 필드에서만 ALC를 읽음.
-
 
     SU304
     -> U304
@@ -407,7 +378,8 @@ def parse_barcode(
 
 
     VR148
-    -> V 필드이므로 ALC 아님
+    -> V 필드
+    -> ALC 아님
     -> 무시
     """
 
@@ -434,18 +406,13 @@ def parse_barcode(
         }
 
 
-    # =====================================================
-    # 여러 Data Matrix가
-    # # 으로 붙어있을 수 있음
-    # =====================================================
-
     records = raw.split(
         "#"
     )
 
 
     # =====================================================
-    # 일반 ALC 검색
+    # 일반 ALC
     # =====================================================
 
     for record in records:
@@ -484,7 +451,7 @@ def parse_barcode(
 
 
             # =================================================
-            # ALC
+            # ALC는 S 필드에서만 읽음
             # =================================================
 
             if (
@@ -503,15 +470,10 @@ def parse_barcode(
                 )
 
 
-                # 빈 S 필드는 무시
                 if not candidate:
 
                     continue
 
-
-                # =================================================
-                # ALC는 U/L/R/S로 시작
-                # =================================================
 
                 if re.fullmatch(
                     r"[ULRS][A-Z0-9]+",
@@ -524,10 +486,7 @@ def parse_barcode(
                     )
 
 
-                    # =================================================
-                    # FRT
-                    # =================================================
-
+                    # U / L -> FRT
                     if candidate[0] in (
                         "U",
                         "L"
@@ -538,10 +497,7 @@ def parse_barcode(
                         )
 
 
-                    # =================================================
-                    # RR
-                    # =================================================
-
+                    # R / S -> RR
                     elif candidate[0] in (
                         "R",
                         "S"
@@ -639,6 +595,7 @@ def parse_barcode(
 
                     try:
 
+
                         parsed_date = (
                             datetime.strptime(
                                 f"{year}-{month}-{day}",
@@ -660,7 +617,7 @@ def parse_barcode(
 
 
         # =====================================================
-        # ALC가 있는 레코드 발견
+        # 첫 정상 ALC 레코드 사용
         # =====================================================
 
         if record_alc:
@@ -687,9 +644,7 @@ def parse_barcode(
 
 
     # =====================================================
-    # 일반 ALC가 없는 경우
-    #
-    # SPK0 특수 형식 검사
+    # 일반 ALC가 없으면 SPK0 검사
     # =====================================================
 
     spk0_result = (
@@ -705,7 +660,7 @@ def parse_barcode(
 
 
     # =====================================================
-    # 마지막 보조 검색
+    # 보조 검색
     # =====================================================
 
     part_number = ""
@@ -754,11 +709,13 @@ def parse_barcode(
 
         try:
 
+
             product_date = (
                 datetime.strptime(
                     f"{year}-{month}-{day}",
                     "%Y-%m-%d"
-                ).strftime(
+                )
+                .strftime(
                     "%Y-%m-%d"
                 )
             )
@@ -790,7 +747,7 @@ def parse_barcode(
 
 
 # =========================================================
-# COUNT 도우미
+# COUNT 함수
 # =========================================================
 
 def count_query(
@@ -819,7 +776,7 @@ def get_statistics(
 
 
     # =====================================================
-    # 1. 당일생산분
+    # 당일생산분
     # =====================================================
 
     production_finished_frt = count_query(
@@ -908,17 +865,14 @@ def get_statistics(
 
     today_production = (
         production_finished_frt
-
         + production_finished_rr
-
         + production_semi_frt
-
         + production_semi_rr
     )
 
 
     # =====================================================
-    # 2. 총재고
+    # 총재고
     # =====================================================
 
     stock_finished_frt = count_query(
@@ -1004,7 +958,7 @@ def get_statistics(
 
 
     # =====================================================
-    # 3. 출고
+    # 출고
     # =====================================================
 
     shipped_frt = count_query(
@@ -1041,46 +995,8 @@ def get_statistics(
     )
 
 
-    shipped_today_frt = count_query(
-        conn,
-        """
-        SELECT COUNT(*)
-
-        FROM scans
-
-        WHERE main_category = '출고'
-
-        AND alc_type = 'FRT'
-
-        AND DATE(scanned_at) = ?
-        """,
-        (
-            today,
-        )
-    )
-
-
-    shipped_today_rr = count_query(
-        conn,
-        """
-        SELECT COUNT(*)
-
-        FROM scans
-
-        WHERE main_category = '출고'
-
-        AND alc_type = 'RR'
-
-        AND DATE(scanned_at) = ?
-        """,
-        (
-            today,
-        )
-    )
-
-
     # =====================================================
-    # 4. 불량
+    # 불량
     # =====================================================
 
     defective_frt = count_query(
@@ -1111,48 +1027,10 @@ def get_statistics(
     )
 
 
-    defective_today_frt = count_query(
-        conn,
-        """
-        SELECT COUNT(*)
-
-        FROM scans
-
-        WHERE main_category = '불량'
-
-        AND alc_type = 'FRT'
-
-        AND DATE(scanned_at) = ?
-        """,
-        (
-            today,
-        )
-    )
-
-
-    defective_today_rr = count_query(
-        conn,
-        """
-        SELECT COUNT(*)
-
-        FROM scans
-
-        WHERE main_category = '불량'
-
-        AND alc_type = 'RR'
-
-        AND DATE(scanned_at) = ?
-        """,
-        (
-            today,
-        )
-    )
-
-
     # =====================================================
     # 현재 재고
     #
-    # 누적 총재고 - 누적 출고
+    # 총재고 - 출고
     # =====================================================
 
     balance_frt = (
@@ -1239,7 +1117,7 @@ def get_statistics(
 
 
     # =====================================================
-    # 생산일자별
+    # 생산일자
     # =====================================================
 
     date_rows = conn.execute("""
@@ -1262,7 +1140,7 @@ def get_statistics(
 
 
     # =====================================================
-    # 최근 30개
+    # 최근 기록
     # =====================================================
 
     scan_rows = conn.execute("""
@@ -1326,24 +1204,12 @@ def get_statistics(
         "shipped_total":
             shipped_total,
 
-        "shipped_today_frt":
-            shipped_today_frt,
-
-        "shipped_today_rr":
-            shipped_today_rr,
-
 
         "defective_frt":
             defective_frt,
 
         "defective_rr":
             defective_rr,
-
-        "defective_today_frt":
-            defective_today_frt,
-
-        "defective_today_rr":
-            defective_today_rr,
 
 
         "balance_frt":
@@ -1383,13 +1249,14 @@ def get_statistics(
 
 
 # =========================================================
-# 브라우저 캐시 방지
+# 캐시 방지
 # =========================================================
 
 @app.after_request
 def disable_cache(
     response
 ):
+
 
     if request.path == "/":
 
@@ -1417,11 +1284,12 @@ def disable_cache(
 
 
 # =========================================================
-# 메인 페이지
+# 메인
 # =========================================================
 
 @app.route("/")
 def index():
+
 
     conn = get_db()
 
@@ -1434,7 +1302,7 @@ def index():
     conn.close()
 
 
-    response = make_response(
+    return make_response(
 
         render_template(
 
@@ -1453,20 +1321,16 @@ def index():
     )
 
 
-    return response
-
-
 # =========================================================
-# 스캔 API
+# 스캔
 # =========================================================
 
 @app.route(
     "/scan",
-    methods=[
-        "POST"
-    ]
+    methods=["POST"]
 )
 def scan():
+
 
     try:
 
@@ -1477,6 +1341,7 @@ def scan():
 
 
         if not data:
+
 
             return jsonify({
 
@@ -1490,86 +1355,39 @@ def scan():
 
 
         raw = str(
-
             data.get(
                 "raw",
                 ""
             )
-
         )
 
 
         main_category = str(
-
             data.get(
                 "main_category",
                 ""
             )
-
         ).strip()
 
 
         sub_category = str(
-
             data.get(
                 "sub_category",
                 ""
             )
-
         ).strip()
 
 
         selected_alc_type = str(
-
             data.get(
                 "selected_alc_type",
                 ""
             )
-
         ).strip().upper()
 
 
         # =================================================
-        # 로그
-        # =================================================
-
-        print()
-        print("==============================")
-        print("브라우저 선택값")
-        print("==============================")
-        print(
-            "메인:",
-            repr(
-                main_category
-            )
-        )
-        print(
-            "서브:",
-            repr(
-                sub_category
-            )
-        )
-        print(
-            "선택 ALC:",
-            repr(
-                selected_alc_type
-            )
-        )
-        print("==============================")
-
-
-        print("바코드 원본 데이터")
-        print("==============================")
-        print(
-            repr(
-                raw
-            )
-        )
-        print("==============================")
-
-
-        # =================================================
-        # 카테고리 검사
+        # 카테고리
         # =================================================
 
         if main_category not in (
@@ -1584,6 +1402,7 @@ def scan():
 
         ):
 
+
             return jsonify({
 
                 "success":
@@ -1596,7 +1415,7 @@ def scan():
 
 
         # =================================================
-        # 당일생산 / 총재고
+        # 완제품/반제품
         # =================================================
 
         if main_category in (
@@ -1616,6 +1435,7 @@ def scan():
 
             ):
 
+
                 return jsonify({
 
                     "success":
@@ -1627,17 +1447,13 @@ def scan():
                 }), 400
 
 
-        # =================================================
-        # 출고 / 불량
-        # =================================================
-
         else:
 
             sub_category = ""
 
 
         # =================================================
-        # FRT / RR 선택
+        # FRT/RR 선택
         # =================================================
 
         if selected_alc_type not in (
@@ -1647,6 +1463,7 @@ def scan():
             "RR"
 
         ):
+
 
             return jsonify({
 
@@ -1661,6 +1478,7 @@ def scan():
 
         if not raw:
 
+
             return jsonify({
 
                 "success":
@@ -1673,7 +1491,7 @@ def scan():
 
 
         # =================================================
-        # 바코드 분석
+        # 분석
         # =================================================
 
         parsed = parse_barcode(
@@ -1743,11 +1561,8 @@ def scan():
         print("==============================")
 
 
-        # =================================================
-        # ALC 없음
-        # =================================================
-
         if not alc_code:
+
 
             return jsonify({
 
@@ -1761,17 +1576,15 @@ def scan():
 
 
         # =================================================
-        # SPK0 강제 규칙
-        #
         # SPK0는 FRT 전용
         # =================================================
 
         if (
             alc_code == "SPK0"
 
-            and selected_alc_type
-            != "FRT"
+            and selected_alc_type != "FRT"
         ):
+
 
             return jsonify({
 
@@ -1781,28 +1594,20 @@ def scan():
                 "error":
                     "SPK0는 FRT로만 처리할 수 있습니다.\n\n"
                     f"현재 선택: {selected_alc_type}\n"
-                    "FRT를 선택한 후 다시 스캔해주세요.",
-
-                "selected_alc_type":
-                    selected_alc_type,
-
-                "detected_alc_type":
-                    "FRT",
-
-                "detected_alc_code":
-                    "SPK0"
+                    "FRT를 선택한 뒤 다시 스캔해주세요."
 
             }), 400
 
 
         # =================================================
-        # 일반 FRT / RR 비교
+        # 일반 구분 검사
         # =================================================
 
         if (
             selected_alc_type
             != alc_type
         ):
+
 
             return jsonify({
 
@@ -1811,24 +1616,15 @@ def scan():
 
                 "error":
                     "ALC 구분이 일치하지 않습니다.\n\n"
-                    f"선택한 구분: {selected_alc_type}\n"
-                    f"실제 인식: {alc_type}\n"
-                    f"인식된 ALC: {alc_code}",
-
-                "selected_alc_type":
-                    selected_alc_type,
-
-                "detected_alc_type":
-                    alc_type,
-
-                "detected_alc_code":
-                    alc_code
+                    f"선택: {selected_alc_type}\n"
+                    f"실제: {alc_type}\n"
+                    f"ALC: {alc_code}"
 
             }), 400
 
 
         # =================================================
-        # 스캔 시간
+        # 저장
         # =================================================
 
         scanned_at = (
@@ -1837,10 +1633,6 @@ def scan():
             )
         )
 
-
-        # =================================================
-        # DB 저장
-        # =================================================
 
         conn = get_db()
 
@@ -1894,13 +1686,11 @@ def scan():
 
 
         # =================================================
-        # 해당 ALC 누적
+        # ALC 누적
         # =================================================
 
         alc_total = count_query(
-
             conn,
-
             """
             SELECT COUNT(*)
 
@@ -1908,22 +1698,18 @@ def scan():
 
             WHERE alc_code = ?
             """,
-
             (
                 alc_code,
             )
-
         )
 
 
         # =================================================
-        # 해당 ALC 오늘
+        # 오늘 ALC
         # =================================================
 
         alc_today = count_query(
-
             conn,
-
             """
             SELECT COUNT(*)
 
@@ -1933,19 +1719,12 @@ def scan():
 
             AND DATE(scanned_at) = ?
             """,
-
             (
                 alc_code,
-
                 today_string()
             )
-
         )
 
-
-        # =================================================
-        # 최신 통계
-        # =================================================
 
         stats = get_statistics(
             conn
@@ -1954,10 +1733,6 @@ def scan():
 
         conn.close()
 
-
-        # =================================================
-        # 브라우저 응답
-        # =================================================
 
         response_data = {
 
@@ -2005,33 +1780,6 @@ def scan():
         )
 
 
-        print()
-        print("==============================")
-        print("저장 완료")
-        print("==============================")
-        print(
-            "업무:",
-            main_category
-        )
-        print(
-            "제품:",
-            sub_category
-        )
-        print(
-            "선택:",
-            selected_alc_type
-        )
-        print(
-            "실제:",
-            alc_type
-        )
-        print(
-            "ALC:",
-            alc_code
-        )
-        print("==============================")
-
-
         return jsonify(
             response_data
         )
@@ -2040,14 +1788,10 @@ def scan():
     except Exception as e:
 
 
-        print()
-        print("==============================")
-        print("오류 발생")
-        print("==============================")
         print(
+            "오류:",
             str(e)
         )
-        print("==============================")
 
 
         return jsonify({
@@ -2062,7 +1806,79 @@ def scan():
 
 
 # =========================================================
-# Excel 다운로드
+# 전체 데이터 초기화
+# =========================================================
+
+@app.route(
+    "/reset",
+    methods=["POST"]
+)
+def reset_data():
+
+
+    try:
+
+
+        conn = get_db()
+
+
+        # 모든 스캔 데이터 삭제
+        conn.execute("""
+            DELETE FROM scans
+        """)
+
+
+        # AUTOINCREMENT 번호도 초기화
+        conn.execute("""
+            DELETE FROM sqlite_sequence
+            WHERE name = 'scans'
+        """)
+
+
+        conn.commit()
+
+        conn.close()
+
+
+        print()
+        print("==============================")
+        print("전체 데이터 초기화 완료")
+        print("==============================")
+
+
+        return jsonify({
+
+            "success":
+                True,
+
+            "message":
+                "모든 데이터가 초기화되었습니다."
+
+        })
+
+
+    except Exception as e:
+
+
+        print(
+            "초기화 오류:",
+            str(e)
+        )
+
+
+        return jsonify({
+
+            "success":
+                False,
+
+            "error":
+                str(e)
+
+        }), 500
+
+
+# =========================================================
+# Excel
 # =========================================================
 
 @app.route(
@@ -2079,10 +1895,6 @@ def export_excel():
     )
 
 
-    # =====================================================
-    # 전체 스캔 기록
-    # =====================================================
-
     all_scans = conn.execute("""
         SELECT *
 
@@ -2091,10 +1903,6 @@ def export_excel():
         ORDER BY id ASC
     """).fetchall()
 
-
-    # =====================================================
-    # 일자별 기록
-    # =====================================================
 
     daily_rows = conn.execute("""
         SELECT
@@ -2163,10 +1971,6 @@ def export_excel():
     conn.close()
 
 
-    # =====================================================
-    # Excel 생성
-    # =====================================================
-
     wb = Workbook()
 
 
@@ -2183,7 +1987,7 @@ def export_excel():
 
 
     # =====================================================
-    # Sheet 1 - 요약
+    # 요약
     # =====================================================
 
     ws = wb.active
@@ -2316,7 +2120,7 @@ def export_excel():
 
 
     # =====================================================
-    # Sheet 2 - 일자별 재고
+    # 일자별 재고
     # =====================================================
 
     ws_daily = wb.create_sheet(
@@ -2379,8 +2183,7 @@ def export_excel():
 
         current_balance = (
             cumulative_stock
-            -
-            cumulative_shipped
+            - cumulative_shipped
         )
 
 
@@ -2398,7 +2201,7 @@ def export_excel():
 
 
     # =====================================================
-    # Sheet 3 - ALC
+    # ALC
     # =====================================================
 
     ws_alc = wb.create_sheet(
@@ -2431,7 +2234,7 @@ def export_excel():
 
 
     # =====================================================
-    # Sheet 4 - 전체 스캔 기록
+    # 전체 스캔
     # =====================================================
 
     ws_scan = wb.create_sheet(
@@ -2486,7 +2289,7 @@ def export_excel():
 
 
     # =====================================================
-    # Excel 스타일
+    # 스타일
     # =====================================================
 
     for sheet in wb.worksheets:
@@ -2550,10 +2353,6 @@ def export_excel():
                 35
             )
 
-
-    # =====================================================
-    # 파일 생성
-    # =====================================================
 
     output = BytesIO()
 
