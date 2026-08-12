@@ -10,7 +10,10 @@
     content="width=device-width, initial-scale=1.0"
 >
 
-<title>바코드 취합 시스템</title>
+<title>
+바코드 취합 시스템
+</title>
+
 
 <style>
 
@@ -34,6 +37,7 @@ h2 {
     margin-top: 38px;
 }
 
+
 /* =====================================================
    카드
 ===================================================== */
@@ -52,6 +56,7 @@ h2 {
     font-size: 48px;
     font-weight: bold;
 }
+
 
 /* =====================================================
    카테고리
@@ -107,6 +112,7 @@ h2 {
     border-radius: 10px;
 }
 
+
 /* =====================================================
    선택
 ===================================================== */
@@ -121,9 +127,10 @@ h2 {
 }
 
 .selection-type {
-    margin-top: 8px;
     font-size: 30px;
+    margin-top: 8px;
 }
+
 
 /* =====================================================
    카메라
@@ -151,6 +158,7 @@ h2 {
     cursor: pointer;
 }
 
+
 /* =====================================================
    결과
 ===================================================== */
@@ -171,7 +179,6 @@ h2 {
     font-size: 56px;
     font-weight: 900;
     margin-top: 10px;
-    letter-spacing: 2px;
 }
 
 .alc-type {
@@ -179,6 +186,7 @@ h2 {
     font-weight: bold;
     margin-bottom: 10px;
 }
+
 
 /* =====================================================
    통계
@@ -212,6 +220,7 @@ h2 {
     margin-top: 5px;
 }
 
+
 /* =====================================================
    현재재고
 ===================================================== */
@@ -222,8 +231,6 @@ h2 {
     background: white;
     border-radius: 16px;
     padding: 22px;
-    box-shadow:
-        0 2px 10px rgba(0,0,0,0.08);
 }
 
 .balance-main {
@@ -232,8 +239,9 @@ h2 {
     margin: 10px 0 20px 0;
 }
 
+
 /* =====================================================
-   리워크
+   리워크 버튼
 ===================================================== */
 
 .rework-button {
@@ -241,17 +249,26 @@ h2 {
     border-radius: 8px;
     background: #217346;
     color: white;
-    padding: 10px 12px;
+    padding: 10px;
     font-weight: bold;
     cursor: pointer;
+    margin: 3px;
 }
 
-.rework-button:active {
-    transform: scale(0.97);
+.dispose-button {
+    border: none;
+    border-radius: 8px;
+    background: #b3261e;
+    color: white;
+    padding: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 3px;
 }
+
 
 /* =====================================================
-   Excel
+   다운로드 / 초기화
 ===================================================== */
 
 .excel-button {
@@ -267,10 +284,6 @@ h2 {
     font-weight: bold;
 }
 
-/* =====================================================
-   초기화
-===================================================== */
-
 .reset-button {
     width: 100%;
     max-width: 650px;
@@ -284,6 +297,7 @@ h2 {
     font-weight: bold;
     cursor: pointer;
 }
+
 
 /* =====================================================
    테이블
@@ -322,11 +336,12 @@ th {
 .notice {
     max-width: 650px;
     margin: 10px auto;
+    background: white;
     padding: 12px;
     border-radius: 10px;
-    background: white;
     color: #666;
 }
+
 
 @media (max-width: 600px) {
 
@@ -351,6 +366,7 @@ th {
         font-size: 12px;
         white-space: nowrap;
     }
+
 }
 
 </style>
@@ -365,10 +381,6 @@ th {
 📦 바코드 취합 시스템
 </h1>
 
-
-<!-- =====================================================
-     오늘 생산
-===================================================== -->
 
 <div class="card">
 
@@ -393,13 +405,8 @@ th {
 <div class="category-container">
 
 
-<!-- =====================================================
-     1. 당일생산분
-===================================================== -->
-
 <button
     class="main-button"
-    type="button"
     onclick="toggleMenu('production')"
 >
 1. 🏭 당일생산분 ▼
@@ -411,101 +418,91 @@ th {
     class="level1"
 >
 
-    <button
-        class="sub-button"
-        type="button"
-        onclick="toggleMenu('production-finished')"
-    >
-        1-1. 완제품 ▼
-    </button>
+
+<button
+    class="sub-button"
+    onclick="toggleMenu('production-finished')"
+>
+1-1. 완제품 ▼
+</button>
 
 
-    <div
-        id="production-finished"
-        class="level2"
-    >
+<div
+    id="production-finished"
+    class="level2"
+>
 
-        <button
-            class="type-button"
-            type="button"
-            onclick="selectCategory(
-                this,
-                '당일생산분',
-                '완제품',
-                'FRT'
-            )"
-        >
-            FRT
-        </button>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        this,
+        '당일생산분',
+        '완제품',
+        'FRT'
+    )"
+>
+FRT
+</button>
 
-        <button
-            class="type-button"
-            type="button"
-            onclick="selectCategory(
-                this,
-                '당일생산분',
-                '완제품',
-                'RR'
-            )"
-        >
-            RR
-        </button>
-
-    </div>
-
-
-    <button
-        class="sub-button"
-        type="button"
-        onclick="toggleMenu('production-semi')"
-    >
-        1-2. 반제품 ▼
-    </button>
-
-
-    <div
-        id="production-semi"
-        class="level2"
-    >
-
-        <button
-            class="type-button"
-            type="button"
-            onclick="selectCategory(
-                this,
-                '당일생산분',
-                '반제품',
-                'FRT'
-            )"
-        >
-            FRT
-        </button>
-
-        <button
-            class="type-button"
-            type="button"
-            onclick="selectCategory(
-                this,
-                '당일생산분',
-                '반제품',
-                'RR'
-            )"
-        >
-            RR
-        </button>
-
-    </div>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        this,
+        '당일생산분',
+        '완제품',
+        'RR'
+    )"
+>
+RR
+</button>
 
 </div>
 
 
-<!-- =====================================================
-     2. 총재고
-===================================================== -->
+<button
+    class="sub-button"
+    onclick="toggleMenu('production-semi')"
+>
+1-2. 반제품 ▼
+</button>
+
+
+<div
+    id="production-semi"
+    class="level2"
+>
+
+<button
+    class="type-button"
+    onclick="selectCategory(
+        this,
+        '당일생산분',
+        '반제품',
+        'FRT'
+    )"
+>
+FRT
+</button>
+
+<button
+    class="type-button"
+    onclick="selectCategory(
+        this,
+        '당일생산분',
+        '반제품',
+        'RR'
+    )"
+>
+RR
+</button>
+
+</div>
+
+</div>
+
 
 <button
     class="main-button"
-    type="button"
     onclick="toggleMenu('stock')"
 >
 2. 🗃️ 총재고 ▼
@@ -517,101 +514,91 @@ th {
     class="level1"
 >
 
-    <button
-        class="sub-button"
-        type="button"
-        onclick="toggleMenu('stock-finished')"
-    >
-        2-1. 완제품 ▼
-    </button>
+
+<button
+    class="sub-button"
+    onclick="toggleMenu('stock-finished')"
+>
+2-1. 완제품 ▼
+</button>
 
 
-    <div
-        id="stock-finished"
-        class="level2"
-    >
+<div
+    id="stock-finished"
+    class="level2"
+>
 
-        <button
-            class="type-button"
-            type="button"
-            onclick="selectCategory(
-                this,
-                '총재고',
-                '완제품',
-                'FRT'
-            )"
-        >
-            FRT
-        </button>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        this,
+        '총재고',
+        '완제품',
+        'FRT'
+    )"
+>
+FRT
+</button>
 
-        <button
-            class="type-button"
-            type="button"
-            onclick="selectCategory(
-                this,
-                '총재고',
-                '완제품',
-                'RR'
-            )"
-        >
-            RR
-        </button>
-
-    </div>
-
-
-    <button
-        class="sub-button"
-        type="button"
-        onclick="toggleMenu('stock-semi')"
-    >
-        2-2. 반제품 ▼
-    </button>
-
-
-    <div
-        id="stock-semi"
-        class="level2"
-    >
-
-        <button
-            class="type-button"
-            type="button"
-            onclick="selectCategory(
-                this,
-                '총재고',
-                '반제품',
-                'FRT'
-            )"
-        >
-            FRT
-        </button>
-
-        <button
-            class="type-button"
-            type="button"
-            onclick="selectCategory(
-                this,
-                '총재고',
-                '반제품',
-                'RR'
-            )"
-        >
-            RR
-        </button>
-
-    </div>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        this,
+        '총재고',
+        '완제품',
+        'RR'
+    )"
+>
+RR
+</button>
 
 </div>
 
 
-<!-- =====================================================
-     3. 출고
-===================================================== -->
+<button
+    class="sub-button"
+    onclick="toggleMenu('stock-semi')"
+>
+2-2. 반제품 ▼
+</button>
+
+
+<div
+    id="stock-semi"
+    class="level2"
+>
+
+<button
+    class="type-button"
+    onclick="selectCategory(
+        this,
+        '총재고',
+        '반제품',
+        'FRT'
+    )"
+>
+FRT
+</button>
+
+<button
+    class="type-button"
+    onclick="selectCategory(
+        this,
+        '총재고',
+        '반제품',
+        'RR'
+    )"
+>
+RR
+</button>
+
+</div>
+
+</div>
+
 
 <button
     class="main-button"
-    type="button"
     onclick="toggleMenu('shipping')"
 >
 3. 🚚 출고 ▼
@@ -623,42 +610,35 @@ th {
     class="level1"
 >
 
-    <button
-        class="type-button"
-        type="button"
-        onclick="selectCategory(
-            this,
-            '출고',
-            '',
-            'FRT'
-        )"
-    >
-        3-1. FRT
-    </button>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        this,
+        '출고',
+        '',
+        'FRT'
+    )"
+>
+3-1. FRT
+</button>
 
-    <button
-        class="type-button"
-        type="button"
-        onclick="selectCategory(
-            this,
-            '출고',
-            '',
-            'RR'
-        )"
-    >
-        3-2. RR
-    </button>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        this,
+        '출고',
+        '',
+        'RR'
+    )"
+>
+3-2. RR
+</button>
 
 </div>
 
 
-<!-- =====================================================
-     4. 불량
-===================================================== -->
-
 <button
     class="main-button"
-    type="button"
     onclick="toggleMenu('defective')"
 >
 4. ❌ 불량 ▼
@@ -670,68 +650,51 @@ th {
     class="level1"
 >
 
-    <button
-        class="type-button"
-        type="button"
-        onclick="selectCategory(
-            this,
-            '불량',
-            '',
-            'FRT'
-        )"
-    >
-        4-1. FRT
-    </button>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        this,
+        '불량',
+        '',
+        'FRT'
+    )"
+>
+4-1. FRT
+</button>
 
-    <button
-        class="type-button"
-        type="button"
-        onclick="selectCategory(
-            this,
-            '불량',
-            '',
-            'RR'
-        )"
-    >
-        4-2. RR
-    </button>
+<button
+    class="type-button"
+    onclick="selectCategory(
+        this,
+        '불량',
+        '',
+        'RR'
+    )"
+>
+4-2. RR
+</button>
 
 </div>
 
 
 </div>
 
-
-<!-- =====================================================
-     선택 표시
-===================================================== -->
 
 <div id="selected-category">
-
-    카테고리를 선택해주세요.
-
+카테고리를 선택해주세요.
 </div>
 
-
-<!-- =====================================================
-     카메라
-===================================================== -->
 
 <div id="reader"></div>
 
 
 <button
     id="scan-button"
-    type="button"
     onclick="startScanner()"
 >
 📷 바코드 스캔 시작
 </button>
 
-
-<!-- =====================================================
-     결과
-===================================================== -->
 
 <div id="result">
 스캔 대기 중
@@ -739,7 +702,7 @@ th {
 
 
 <!-- =====================================================
-     현재 재고
+     현재재고
 ===================================================== -->
 
 <h2>
@@ -749,58 +712,58 @@ th {
 
 <div class="balance">
 
-    <div>
-        총재고(당일생산 포함) - 출고
-    </div>
+<div>
+총재고(당일생산 포함) - 출고
+</div>
 
-    <div
-        class="balance-main"
-        id="balance-total"
-    >
-        {{ balance_total }}개
-    </div>
-
-
-    <div class="grid">
-
-        <div class="stat">
-
-            <div class="stat-name">
-                FRT
-            </div>
-
-            <div
-                class="stat-number"
-                id="balance-frt"
-            >
-                {{ balance_frt }}
-            </div>
-
-        </div>
+<div
+    class="balance-main"
+    id="balance-total"
+>
+{{ balance_total }}개
+</div>
 
 
-        <div class="stat">
+<div class="grid">
 
-            <div class="stat-name">
-                RR
-            </div>
+<div class="stat">
 
-            <div
-                class="stat-number"
-                id="balance-rr"
-            >
-                {{ balance_rr }}
-            </div>
+<div class="stat-name">
+FRT
+</div>
 
-        </div>
+<div
+    class="stat-number"
+    id="balance-frt"
+>
+{{ balance_frt }}
+</div>
 
-    </div>
+</div>
+
+
+<div class="stat">
+
+<div class="stat-name">
+RR
+</div>
+
+<div
+    class="stat-number"
+    id="balance-rr"
+>
+{{ balance_rr }}
+</div>
+
+</div>
+
+</div>
 
 </div>
 
 
 <!-- =====================================================
-     오늘 생산 현황
+     생산
 ===================================================== -->
 
 <h2>
@@ -810,68 +773,68 @@ th {
 
 <div class="grid">
 
-    <div class="stat">
+<div class="stat">
 
-        <div class="stat-name">
-            완제품 FRT
-        </div>
+<div class="stat-name">
+완제품 FRT
+</div>
 
-        <div
-            class="stat-number"
-            id="production-finished-frt"
-        >
-            {{ production_finished_frt }}
-        </div>
+<div
+    class="stat-number"
+    id="production-finished-frt"
+>
+{{ production_finished_frt }}
+</div>
 
-    </div>
-
-
-    <div class="stat">
-
-        <div class="stat-name">
-            완제품 RR
-        </div>
-
-        <div
-            class="stat-number"
-            id="production-finished-rr"
-        >
-            {{ production_finished_rr }}
-        </div>
-
-    </div>
+</div>
 
 
-    <div class="stat">
+<div class="stat">
 
-        <div class="stat-name">
-            반제품 FRT
-        </div>
+<div class="stat-name">
+완제품 RR
+</div>
 
-        <div
-            class="stat-number"
-            id="production-semi-frt"
-        >
-            {{ production_semi_frt }}
-        </div>
+<div
+    class="stat-number"
+    id="production-finished-rr"
+>
+{{ production_finished_rr }}
+</div>
 
-    </div>
+</div>
 
 
-    <div class="stat">
+<div class="stat">
 
-        <div class="stat-name">
-            반제품 RR
-        </div>
+<div class="stat-name">
+반제품 FRT
+</div>
 
-        <div
-            class="stat-number"
-            id="production-semi-rr"
-        >
-            {{ production_semi_rr }}
-        </div>
+<div
+    class="stat-number"
+    id="production-semi-frt"
+>
+{{ production_semi_frt }}
+</div>
 
-    </div>
+</div>
+
+
+<div class="stat">
+
+<div class="stat-name">
+반제품 RR
+</div>
+
+<div
+    class="stat-number"
+    id="production-semi-rr"
+>
+{{ production_semi_rr }}
+</div>
+
+</div>
 
 </div>
 
@@ -884,75 +847,76 @@ th {
 🗃️ 누적 총재고
 </h2>
 
+
 <div class="notice">
-당일생산분도 이 총재고에 누적됩니다.
+당일생산분도 자동으로 총재고에 포함됩니다.
 </div>
 
 
 <div class="grid">
 
-    <div class="stat">
+<div class="stat">
 
-        <div class="stat-name">
-            완제품 FRT
-        </div>
+<div class="stat-name">
+완제품 FRT
+</div>
 
-        <div
-            class="stat-number"
-            id="stock-finished-frt"
-        >
-            {{ stock_finished_frt }}
-        </div>
+<div
+    class="stat-number"
+    id="stock-finished-frt"
+>
+{{ stock_finished_frt }}
+</div>
 
-    </div>
-
-
-    <div class="stat">
-
-        <div class="stat-name">
-            완제품 RR
-        </div>
-
-        <div
-            class="stat-number"
-            id="stock-finished-rr"
-        >
-            {{ stock_finished_rr }}
-        </div>
-
-    </div>
+</div>
 
 
-    <div class="stat">
+<div class="stat">
 
-        <div class="stat-name">
-            반제품 FRT
-        </div>
+<div class="stat-name">
+완제품 RR
+</div>
 
-        <div
-            class="stat-number"
-            id="stock-semi-frt"
-        >
-            {{ stock_semi_frt }}
-        </div>
+<div
+    class="stat-number"
+    id="stock-finished-rr"
+>
+{{ stock_finished_rr }}
+</div>
 
-    </div>
+</div>
 
 
-    <div class="stat">
+<div class="stat">
 
-        <div class="stat-name">
-            반제품 RR
-        </div>
+<div class="stat-name">
+반제품 FRT
+</div>
 
-        <div
-            class="stat-number"
-            id="stock-semi-rr"
-        >
-            {{ stock_semi_rr }}
-        </div>
+<div
+    class="stat-number"
+    id="stock-semi-frt"
+>
+{{ stock_semi_frt }}
+</div>
 
-    </div>
+</div>
+
+
+<div class="stat">
+
+<div class="stat-name">
+반제품 RR
+</div>
+
+<div
+    class="stat-number"
+    id="stock-semi-rr"
+>
+{{ stock_semi_rr }}
+</div>
+
+</div>
 
 </div>
 
@@ -968,36 +932,36 @@ th {
 
 <div class="grid">
 
-    <div class="stat">
+<div class="stat">
 
-        <div class="stat-name">
-            FRT
-        </div>
+<div class="stat-name">
+FRT
+</div>
 
-        <div
-            class="stat-number"
-            id="shipped-frt"
-        >
-            {{ shipped_frt }}
-        </div>
+<div
+    class="stat-number"
+    id="shipped-frt"
+>
+{{ shipped_frt }}
+</div>
 
-    </div>
+</div>
 
 
-    <div class="stat">
+<div class="stat">
 
-        <div class="stat-name">
-            RR
-        </div>
+<div class="stat-name">
+RR
+</div>
 
-        <div
-            class="stat-number"
-            id="shipped-rr"
-        >
-            {{ shipped_rr }}
-        </div>
+<div
+    class="stat-number"
+    id="shipped-rr"
+>
+{{ shipped_rr }}
+</div>
 
-    </div>
+</div>
 
 </div>
 
@@ -1013,36 +977,36 @@ th {
 
 <div class="grid">
 
-    <div class="stat">
+<div class="stat">
 
-        <div class="stat-name">
-            FRT 불량 이력
-        </div>
+<div class="stat-name">
+FRT
+</div>
 
-        <div
-            class="stat-number"
-            id="defective-frt"
-        >
-            {{ defective_frt }}
-        </div>
+<div
+    class="stat-number"
+    id="defective-frt"
+>
+{{ defective_frt }}
+</div>
 
-    </div>
+</div>
 
 
-    <div class="stat">
+<div class="stat">
 
-        <div class="stat-name">
-            RR 불량 이력
-        </div>
+<div class="stat-name">
+RR
+</div>
 
-        <div
-            class="stat-number"
-            id="defective-rr"
-        >
-            {{ defective_rr }}
-        </div>
+<div
+    class="stat-number"
+    id="defective-rr"
+>
+{{ defective_rr }}
+</div>
 
-    </div>
+</div>
 
 </div>
 
@@ -1058,16 +1022,16 @@ th {
 
 <div class="card">
 
-    <div>
-        현재 리워크 대기
-    </div>
+<div>
+현재 리워크 대기
+</div>
 
-    <div
-        class="big-number"
-        id="rework-waiting"
-    >
-        {{ rework_waiting }}개
-    </div>
+<div
+    class="big-number"
+    id="rework-waiting"
+>
+{{ rework_waiting }}개
+</div>
 
 </div>
 
@@ -1079,74 +1043,69 @@ th {
 <thead>
 
 <tr>
-
-    <th>번호</th>
-    <th>ALC구분</th>
-    <th>ALC</th>
-    <th>P코드</th>
-    <th>부품번호</th>
-    <th>생산일자</th>
-    <th>제품</th>
-    <th>첫 불량시간</th>
-    <th>처리</th>
-
+<th>번호</th>
+<th>구분</th>
+<th>ALC</th>
+<th>P코드</th>
+<th>부품번호</th>
+<th>제품</th>
+<th>처리</th>
 </tr>
 
 </thead>
 
 
-<tbody id="rework-table-body">
-
+<tbody>
 
 {% for row in rework_items %}
 
 <tr>
 
-    <td>
-        {{ row["id"] }}
-    </td>
+<td>
+{{ row["id"] }}
+</td>
 
-    <td>
-        {{ row["alc_type"] or "-" }}
-    </td>
+<td>
+{{ row["alc_type"] }}
+</td>
 
-    <td>
-        {{ row["alc_code"] or "-" }}
-    </td>
+<td>
+{{ row["alc_code"] }}
+</td>
 
-    <td>
-        {{ row["p_code"] or "-" }}
-    </td>
+<td>
+{{ row["p_code"] }}
+</td>
 
-    <td>
-        {{ row["part_number"] or "-" }}
-    </td>
+<td>
+{{ row["part_number"] or "-" }}
+</td>
 
-    <td>
-        {{ row["product_date"] or "-" }}
-    </td>
+<td>
+{{ row["sub_category"] or "-" }}
+</td>
 
-    <td>
-        {{ row["sub_category"] or "-" }}
-    </td>
+<td>
 
-    <td>
-        {{ row["first_defect_at"] or "-" }}
-    </td>
+<button
+    class="rework-button"
+    onclick="returnRework(
+        {{ row['id'] }}
+    )"
+>
+✅ 당일생산 복귀
+</button>
 
-    <td>
+<button
+    class="dispose-button"
+    onclick="disposeRework(
+        {{ row['id'] }}
+    )"
+>
+🗑️ 바로 폐기
+</button>
 
-        <button
-            class="rework-button"
-            type="button"
-            onclick="returnRework(
-                {{ row['id'] }}
-            )"
-        >
-            ✅ 당일생산분으로 복귀
-        </button>
-
-    </td>
+</td>
 
 </tr>
 
@@ -1154,17 +1113,16 @@ th {
 
 <tr>
 
-    <td
-        colspan="9"
-        class="empty"
-    >
-        리워크 대기 제품이 없습니다.
-    </td>
+<td
+    colspan="7"
+    class="empty"
+>
+리워크 대기 제품이 없습니다.
+</td>
 
 </tr>
 
 {% endfor %}
-
 
 </tbody>
 
@@ -1184,16 +1142,16 @@ th {
 
 <div class="card">
 
-    <div>
-        누적 폐기
-    </div>
+<div>
+누적 폐기
+</div>
 
-    <div
-        class="big-number"
-        id="disposed-total"
-    >
-        {{ disposed_total }}개
-    </div>
+<div
+    class="big-number"
+    id="disposed-total"
+>
+{{ disposed_total }}개
+</div>
 
 </div>
 
@@ -1205,59 +1163,51 @@ th {
 <thead>
 
 <tr>
-
-    <th>번호</th>
-    <th>ALC구분</th>
-    <th>ALC</th>
-    <th>P코드</th>
-    <th>부품번호</th>
-    <th>생산일자</th>
-    <th>불량횟수</th>
-    <th>폐기시간</th>
-
+<th>번호</th>
+<th>구분</th>
+<th>ALC</th>
+<th>P코드</th>
+<th>부품번호</th>
+<th>불량횟수</th>
+<th>폐기시간</th>
 </tr>
 
 </thead>
 
 
-<tbody id="disposed-table-body">
-
+<tbody>
 
 {% for row in disposed_items %}
 
 <tr>
 
-    <td>
-        {{ row["id"] }}
-    </td>
+<td>
+{{ row["id"] }}
+</td>
 
-    <td>
-        {{ row["alc_type"] or "-" }}
-    </td>
+<td>
+{{ row["alc_type"] }}
+</td>
 
-    <td>
-        {{ row["alc_code"] or "-" }}
-    </td>
+<td>
+{{ row["alc_code"] }}
+</td>
 
-    <td>
-        {{ row["p_code"] or "-" }}
-    </td>
+<td>
+{{ row["p_code"] }}
+</td>
 
-    <td>
-        {{ row["part_number"] or "-" }}
-    </td>
+<td>
+{{ row["part_number"] or "-" }}
+</td>
 
-    <td>
-        {{ row["product_date"] or "-" }}
-    </td>
+<td>
+{{ row["defect_count"] }}
+</td>
 
-    <td>
-        {{ row["defect_count"] }}
-    </td>
-
-    <td>
-        {{ row["disposed_at"] or "-" }}
-    </td>
+<td>
+{{ row["disposed_at"] or "-" }}
+</td>
 
 </tr>
 
@@ -1265,17 +1215,16 @@ th {
 
 <tr>
 
-    <td
-        colspan="8"
-        class="empty"
-    >
-        폐기 제품이 없습니다.
-    </td>
+<td
+    colspan="7"
+    class="empty"
+>
+폐기 제품이 없습니다.
+</td>
 
 </tr>
 
 {% endfor %}
-
 
 </tbody>
 
@@ -1283,10 +1232,6 @@ th {
 
 </div>
 
-
-<!-- =====================================================
-     Excel
-===================================================== -->
 
 <a
     href="/export.xlsx"
@@ -1296,13 +1241,8 @@ th {
 </a>
 
 
-<!-- =====================================================
-     초기화
-===================================================== -->
-
 <button
     class="reset-button"
-    type="button"
     onclick="resetAllData()"
 >
 🗑️ 전체 데이터 초기화
@@ -1310,7 +1250,7 @@ th {
 
 
 <!-- =====================================================
-     ALC 누적
+     ALC
 ===================================================== -->
 
 <h2>
@@ -1325,9 +1265,9 @@ th {
 <thead>
 
 <tr>
-    <th>구분</th>
-    <th>ALC</th>
-    <th>수량</th>
+<th>구분</th>
+<th>ALC</th>
+<th>수량</th>
 </tr>
 
 </thead>
@@ -1335,22 +1275,21 @@ th {
 
 <tbody id="alc-table-body">
 
-
 {% for row in alc_counts %}
 
 <tr>
 
-    <td>
-        {{ row["alc_type"] }}
-    </td>
+<td>
+{{ row["alc_type"] }}
+</td>
 
-    <td>
-        {{ row["alc_code"] }}
-    </td>
+<td>
+{{ row["alc_code"] }}
+</td>
 
-    <td>
-        {{ row["count"] }}개
-    </td>
+<td>
+{{ row["count"] }}개
+</td>
 
 </tr>
 
@@ -1358,17 +1297,16 @@ th {
 
 <tr>
 
-    <td
-        colspan="3"
-        class="empty"
-    >
-        아직 기록이 없습니다.
-    </td>
+<td
+    colspan="3"
+    class="empty"
+>
+기록이 없습니다.
+</td>
 
 </tr>
 
 {% endfor %}
-
 
 </tbody>
 
@@ -1376,10 +1314,6 @@ th {
 
 </div>
 
-
-<!-- =====================================================
-     오늘 ALC
-===================================================== -->
 
 <h2>
 📅 오늘의 ALC 수량
@@ -1393,9 +1327,9 @@ th {
 <thead>
 
 <tr>
-    <th>구분</th>
-    <th>ALC</th>
-    <th>오늘 수량</th>
+<th>구분</th>
+<th>ALC</th>
+<th>수량</th>
 </tr>
 
 </thead>
@@ -1403,40 +1337,25 @@ th {
 
 <tbody id="today-alc-table-body">
 
-
 {% for row in today_alc_counts %}
 
 <tr>
 
-    <td>
-        {{ row["alc_type"] }}
-    </td>
+<td>
+{{ row["alc_type"] }}
+</td>
 
-    <td>
-        {{ row["alc_code"] }}
-    </td>
+<td>
+{{ row["alc_code"] }}
+</td>
 
-    <td>
-        {{ row["count"] }}개
-    </td>
-
-</tr>
-
-{% else %}
-
-<tr>
-
-    <td
-        colspan="3"
-        class="empty"
-    >
-        오늘 기록이 없습니다.
-    </td>
+<td>
+{{ row["count"] }}개
+</td>
 
 </tr>
 
 {% endfor %}
-
 
 </tbody>
 
@@ -1446,70 +1365,7 @@ th {
 
 
 <!-- =====================================================
-     생산일자
-===================================================== -->
-
-<h2>
-📅 생산일자별 수량
-</h2>
-
-
-<div class="table-wrapper">
-
-<table>
-
-<thead>
-
-<tr>
-    <th>생산일자</th>
-    <th>수량</th>
-</tr>
-
-</thead>
-
-
-<tbody id="date-table-body">
-
-
-{% for row in date_counts %}
-
-<tr>
-
-    <td>
-        {{ row["product_date"] }}
-    </td>
-
-    <td>
-        {{ row["count"] }}개
-    </td>
-
-</tr>
-
-{% else %}
-
-<tr>
-
-    <td
-        colspan="2"
-        class="empty"
-    >
-        생산일자 기록이 없습니다.
-    </td>
-
-</tr>
-
-{% endfor %}
-
-
-</tbody>
-
-</table>
-
-</div>
-
-
-<!-- =====================================================
-     최근 스캔
+     최근 기록
 ===================================================== -->
 
 <h2>
@@ -1525,81 +1381,66 @@ th {
 
 <tr>
 
-    <th>번호</th>
-    <th>업무</th>
-    <th>제품</th>
-    <th>ALC구분</th>
-    <th>ALC</th>
-    <th>P코드</th>
-    <th>부품번호</th>
-    <th>생산일자</th>
-    <th>시간</th>
+<th>번호</th>
+<th>업무</th>
+<th>제품</th>
+<th>구분</th>
+<th>ALC</th>
+<th>P코드</th>
+<th>부품번호</th>
+<th>생산일자</th>
+<th>시간</th>
 
 </tr>
 
 </thead>
 
 
-<tbody id="recent-table-body">
-
+<tbody>
 
 {% for row in scans %}
 
 <tr>
 
-    <td>
-        {{ row["id"] }}
-    </td>
+<td>
+{{ row["id"] }}
+</td>
 
-    <td>
-        {{ row["main_category"] or "-" }}
-    </td>
+<td>
+{{ row["main_category"] }}
+</td>
 
-    <td>
-        {{ row["sub_category"] or "-" }}
-    </td>
+<td>
+{{ row["sub_category"] or "-" }}
+</td>
 
-    <td>
-        {{ row["alc_type"] or "-" }}
-    </td>
+<td>
+{{ row["alc_type"] }}
+</td>
 
-    <td>
-        {{ row["alc_code"] or "-" }}
-    </td>
+<td>
+{{ row["alc_code"] }}
+</td>
 
-    <td>
-        {{ row["p_code"] or "-" }}
-    </td>
+<td>
+{{ row["p_code"] }}
+</td>
 
-    <td>
-        {{ row["part_number"] or "-" }}
-    </td>
+<td>
+{{ row["part_number"] }}
+</td>
 
-    <td>
-        {{ row["product_date"] or "-" }}
-    </td>
+<td>
+{{ row["product_date"] or "-" }}
+</td>
 
-    <td>
-        {{ row["scanned_at"] or "-" }}
-    </td>
-
-</tr>
-
-{% else %}
-
-<tr>
-
-    <td
-        colspan="9"
-        class="empty"
-    >
-        아직 스캔 기록이 없습니다.
-    </td>
+<td>
+{{ row["scanned_at"] }}
+</td>
 
 </tr>
 
 {% endfor %}
-
 
 </tbody>
 
@@ -1612,10 +1453,6 @@ th {
 
 "use strict";
 
-
-// =========================================================
-// 변수
-// =========================================================
 
 let scanner = null;
 
@@ -1631,143 +1468,82 @@ let selectedAlcType = "";
 
 
 // =========================================================
-// HTML 안전
-// =========================================================
-
-function escapeHtml(value) {
-
-    const div =
-        document.createElement(
-            "div"
-        );
-
-    div.textContent =
-        value ?? "";
-
-    return div.innerHTML;
-}
-
-
-// =========================================================
 // 메뉴
 // =========================================================
 
 function toggleMenu(id) {
 
     const element =
-        document.getElementById(
-            id
-        );
+        document.getElementById(id);
 
-    if (
-        element.style.display
-        === "block"
-    ) {
-
-        element.style.display =
-            "none";
-
-    }
-
-    else {
-
-        element.style.display =
-            "block";
-
-    }
-
+    element.style.display =
+        element.style.display === "block"
+        ? "none"
+        : "block";
 }
 
 
 // =========================================================
-// 카테고리 선택
+// 카테고리
 // =========================================================
 
 function selectCategory(
     button,
-    mainCategory,
-    subCategory,
-    alcType
+    main,
+    sub,
+    type
 ) {
 
     selectedMainCategory =
-        mainCategory;
+        main;
 
     selectedSubCategory =
-        subCategory;
+        sub;
 
     selectedAlcType =
-        String(
-            alcType
-        )
-        .trim()
-        .toUpperCase();
-
+        type;
 
     document
         .querySelectorAll(
             ".type-button"
         )
         .forEach(
-            item => {
-
+            item =>
                 item.classList.remove(
                     "selected"
-                );
-
-            }
+                )
         );
-
 
     button.classList.add(
         "selected"
     );
 
-
     let text =
-        mainCategory;
+        main;
 
-
-    if (
-        subCategory
-    ) {
+    if (sub) {
 
         text +=
             " → "
-            + subCategory;
-
+            + sub;
     }
-
 
     text +=
         " → "
-        + selectedAlcType;
-
+        + type;
 
     document.getElementById(
         "selected-category"
     ).innerHTML = `
 
-        <div>
-            현재 선택:
-            ${escapeHtml(text)}
-        </div>
+        현재 선택:
+        ${text}
 
         <div class="selection-type">
-            ${escapeHtml(
-                selectedAlcType
-            )}
+        ${type}
         </div>
 
     `;
-
-
-    document.getElementById(
-        "result"
-    ).innerText =
-        "✅ 선택 완료\n\n"
-        + text
-        + "\n\n📷 스캔 시작 버튼을 눌러주세요.";
 
 }
 
@@ -1778,9 +1554,7 @@ function selectCategory(
 
 function stopCamera() {
 
-    if (
-        currentStream
-    ) {
+    if (currentStream) {
 
         currentStream
             .getTracks()
@@ -1791,317 +1565,10 @@ function stopCamera() {
 
         currentStream =
             null;
-
     }
 
     alreadyScanning =
         false;
-}
-
-
-// =========================================================
-// ALC 표
-// =========================================================
-
-function updateAlcTable(rows) {
-
-    const body =
-        document.getElementById(
-            "alc-table-body"
-        );
-
-
-    if (
-        !rows
-        ||
-        rows.length === 0
-    ) {
-
-        body.innerHTML = `
-
-            <tr>
-
-                <td
-                    colspan="3"
-                    class="empty"
-                >
-                    아직 기록이 없습니다.
-                </td>
-
-            </tr>
-
-        `;
-
-        return;
-    }
-
-
-    body.innerHTML =
-        rows.map(
-            row => `
-
-            <tr>
-
-                <td>
-                    ${escapeHtml(
-                        row.alc_type
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        row.alc_code
-                    )}
-                </td>
-
-                <td>
-                    ${row.count}개
-                </td>
-
-            </tr>
-
-        `
-        ).join("");
-
-}
-
-
-// =========================================================
-// 오늘 ALC
-// =========================================================
-
-function updateTodayAlcTable(rows) {
-
-    const body =
-        document.getElementById(
-            "today-alc-table-body"
-        );
-
-
-    if (
-        !rows
-        ||
-        rows.length === 0
-    ) {
-
-        body.innerHTML = `
-
-            <tr>
-
-                <td
-                    colspan="3"
-                    class="empty"
-                >
-                    오늘 기록이 없습니다.
-                </td>
-
-            </tr>
-
-        `;
-
-        return;
-    }
-
-
-    body.innerHTML =
-        rows.map(
-            row => `
-
-            <tr>
-
-                <td>
-                    ${escapeHtml(
-                        row.alc_type
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        row.alc_code
-                    )}
-                </td>
-
-                <td>
-                    ${row.count}개
-                </td>
-
-            </tr>
-
-        `
-        ).join("");
-
-}
-
-
-// =========================================================
-// 생산일자
-// =========================================================
-
-function updateDateTable(rows) {
-
-    const body =
-        document.getElementById(
-            "date-table-body"
-        );
-
-
-    if (
-        !rows
-        ||
-        rows.length === 0
-    ) {
-
-        body.innerHTML = `
-
-            <tr>
-
-                <td
-                    colspan="2"
-                    class="empty"
-                >
-                    생산일자 기록이 없습니다.
-                </td>
-
-            </tr>
-
-        `;
-
-        return;
-    }
-
-
-    body.innerHTML =
-        rows.map(
-            row => `
-
-            <tr>
-
-                <td>
-                    ${escapeHtml(
-                        row.product_date
-                    )}
-                </td>
-
-                <td>
-                    ${row.count}개
-                </td>
-
-            </tr>
-
-        `
-        ).join("");
-
-}
-
-
-// =========================================================
-// 최근 기록
-// =========================================================
-
-function updateRecentTable(rows) {
-
-    const body =
-        document.getElementById(
-            "recent-table-body"
-        );
-
-
-    if (
-        !rows
-        ||
-        rows.length === 0
-    ) {
-
-        body.innerHTML = `
-
-            <tr>
-
-                <td
-                    colspan="9"
-                    class="empty"
-                >
-                    아직 스캔 기록이 없습니다.
-                </td>
-
-            </tr>
-
-        `;
-
-        return;
-    }
-
-
-    body.innerHTML =
-        rows.map(
-            row => `
-
-            <tr>
-
-                <td>
-                    ${row.id}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        row.main_category
-                        || "-"
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        row.sub_category
-                        || "-"
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        row.alc_type
-                        || "-"
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        row.alc_code
-                        || "-"
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        row.p_code
-                        || "-"
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        row.part_number
-                        || "-"
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        row.product_date
-                        || "-"
-                    )}
-                </td>
-
-                <td>
-                    ${escapeHtml(
-                        row.scanned_at
-                        || "-"
-                    )}
-                </td>
-
-            </tr>
-
-        `
-        ).join("");
-
 }
 
 
@@ -2125,24 +1592,9 @@ async function startScanner() {
         return;
     }
 
-
-    if (
-        alreadyScanning
-    ) {
-
+    if (alreadyScanning) {
         return;
     }
-
-
-    alreadyScanning =
-        true;
-
-
-    document.getElementById(
-        "result"
-    ).innerText =
-        "📷 카메라 준비 중...";
-
 
     if (
         !(
@@ -2154,71 +1606,53 @@ async function startScanner() {
         document.getElementById(
             "result"
         ).innerText =
-            "❌ 이 브라우저에서는 바코드 스캔을 지원하지 않습니다.";
-
-        alreadyScanning =
-            false;
+            "❌ 이 브라우저는 스캔 기능을 지원하지 않습니다.";
 
         return;
     }
 
+    alreadyScanning =
+        true;
+
+    scanner =
+        new BarcodeDetector({
+
+            formats: [
+                "data_matrix",
+                "qr_code"
+            ]
+
+        });
 
     try {
-
-        scanner =
-            new BarcodeDetector({
-
-                formats: [
-                    "data_matrix",
-                    "qr_code"
-                ]
-
-            });
-
 
         const video =
             document.createElement(
                 "video"
             );
 
+        video.autoplay =
+            true;
 
-        video.setAttribute(
-            "autoplay",
-            ""
-        );
-
-
-        video.setAttribute(
-            "playsinline",
-            ""
-        );
-
+        video.playsInline =
+            true;
 
         video.style.width =
             "100%";
 
+        document.getElementById(
+            "reader"
+        ).innerHTML = "";
 
-        video.style.display =
-            "block";
-
-
-        const reader =
-            document.getElementById(
-                "reader"
-            );
-
-
-        reader.innerHTML =
-            "";
-
-
-        reader.appendChild(
+        document.getElementById(
+            "reader"
+        ).appendChild(
             video
         );
 
-
         currentStream =
-            await navigator.mediaDevices.getUserMedia({
+            await navigator.mediaDevices
+            .getUserMedia({
 
                 video: {
 
@@ -2229,20 +1663,15 @@ async function startScanner() {
 
             });
 
-
         video.srcObject =
             currentStream;
 
-
         video.addEventListener(
             "loadeddata",
-            () => {
-
+            () =>
                 scanFrame(
                     video
-                );
-
-            }
+                )
         );
 
     }
@@ -2251,31 +1680,25 @@ async function startScanner() {
 
         stopCamera();
 
-
         document.getElementById(
             "result"
         ).innerText =
-            "❌ 카메라 오류\n\n"
+            "카메라 오류\n"
             + error.message;
-
     }
 
 }
 
 
 // =========================================================
-// 실제 스캔
+// 스캔
 // =========================================================
 
 async function scanFrame(video) {
 
-    if (
-        !alreadyScanning
-    ) {
-
+    if (!alreadyScanning) {
         return;
     }
-
 
     try {
 
@@ -2284,36 +1707,19 @@ async function scanFrame(video) {
                 video
             );
 
-
         if (
-            barcodes.length > 0
+            barcodes.length
+            > 0
         ) {
 
-            const barcodeData =
-                barcodes[0].rawValue;
-
-
-            const requestMain =
-                selectedMainCategory;
-
-
-            const requestSub =
-                selectedSubCategory;
-
-
-            const requestAlc =
-                String(
-                    selectedAlcType
-                )
-                .trim()
-                .toUpperCase();
-
+            const raw =
+                barcodes[0]
+                .rawValue;
 
             document.getElementById(
                 "result"
             ).innerText =
-                "⏳ 검사 및 저장 중...";
-
+                "⏳ 처리 중...";
 
             const response =
                 await fetch(
@@ -2322,9 +1728,6 @@ async function scanFrame(video) {
 
                         method:
                             "POST",
-
-                        cache:
-                            "no-store",
 
                         headers: {
 
@@ -2337,33 +1740,26 @@ async function scanFrame(video) {
                             JSON.stringify({
 
                                 raw:
-                                    barcodeData,
+                                    raw,
 
                                 main_category:
-                                    requestMain,
+                                    selectedMainCategory,
 
                                 sub_category:
-                                    requestSub,
+                                    selectedSubCategory,
 
                                 selected_alc_type:
-                                    requestAlc
+                                    selectedAlcType
 
                             })
 
                     }
                 );
 
-
             const data =
                 await response.json();
 
-
             stopCamera();
-
-
-            // =================================================
-            // 실패 / 중복
-            // =================================================
 
             if (
                 !response.ok
@@ -2374,25 +1770,12 @@ async function scanFrame(video) {
                 document.getElementById(
                     "result"
                 ).innerText =
-                    (
-                        data.duplicate
-                        ? "⚠️ 중복 데이터\n\n"
-                        : "❌ 처리 실패\n\n"
-                    )
-                    +
-                    (
-                        data.error
-                        ||
-                        "알 수 없는 오류"
-                    );
+                    data.error
+                    ||
+                    "처리 실패";
 
                 return;
             }
-
-
-            // =================================================
-            // 첫 불량 -> 리워크
-            // =================================================
 
             if (
                 data.action
@@ -2401,56 +1784,24 @@ async function scanFrame(video) {
 
                 document.getElementById(
                     "result"
-                ).innerHTML = `
+                ).innerText =
 
-                    🔧 불량 등록 완료
+                    "🔧 리워크 대기로 이동했습니다.\n\n"
 
-                    <div class="alc-big">
+                    + "ALC: "
+                    + data.alc_code
 
-                        ${escapeHtml(
-                            data.alc_code
-                        )}
-
-                    </div>
-
-                    <div class="alc-type">
-
-                        ${escapeHtml(
-                            data.alc_type
-                        )}
-
-                    </div>
-
-                    P코드:
-                    ${escapeHtml(
-                        data.p_code
-                        || "-"
-                    )}
-
-                    <br><br>
-
-                    리워크 대기 상태로 이동했습니다.
-
-                `;
-
+                    + "\nP코드: "
+                    + data.p_code;
 
                 setTimeout(
-                    () => {
-
-                        window.location.reload();
-
-                    },
-                    1200
+                    () =>
+                        location.reload(),
+                    1000
                 );
-
 
                 return;
             }
-
-
-            // =================================================
-            // 재불량 -> 폐기
-            // =================================================
 
             if (
                 data.action
@@ -2459,76 +1810,20 @@ async function scanFrame(video) {
 
                 document.getElementById(
                     "result"
-                ).innerHTML = `
+                ).innerText =
 
-                    🗑️ 재불량 확인
+                    "🗑️ 재불량 제품입니다.\n"
 
-                    <div class="alc-big">
-
-                        ${escapeHtml(
-                            data.alc_code
-                        )}
-
-                    </div>
-
-                    <div class="alc-type">
-
-                        ${escapeHtml(
-                            data.alc_type
-                        )}
-
-                    </div>
-
-                    P코드:
-                    ${escapeHtml(
-                        data.p_code
-                        || "-"
-                    )}
-
-                    <br><br>
-
-                    폐기 처리되었습니다.
-
-                `;
-
+                    + "자동 폐기 처리되었습니다.";
 
                 setTimeout(
-                    () => {
-
-                        window.location.reload();
-
-                    },
-                    1200
+                    () =>
+                        location.reload(),
+                    1000
                 );
-
 
                 return;
             }
-
-
-            // =================================================
-            // 일반 저장
-            // =================================================
-
-            let categoryText =
-                data.main_category;
-
-
-            if (
-                data.sub_category
-            ) {
-
-                categoryText +=
-                    " → "
-                    + data.sub_category;
-
-            }
-
-
-            categoryText +=
-                " → "
-                + data.alc_type;
-
 
             document.getElementById(
                 "result"
@@ -2537,232 +1832,30 @@ async function scanFrame(video) {
                 ✅ 저장 완료
 
                 <div class="alc-big">
-
-                    ${escapeHtml(
-                        data.alc_code
-                    )}
-
+                    ${data.alc_code}
                 </div>
 
                 <div class="alc-type">
-
-                    ${escapeHtml(
-                        data.alc_type
-                    )}
-
+                    ${data.alc_type}
                 </div>
 
-                ${escapeHtml(
-                    categoryText
-                )}
-
-                <br><br>
-
-                ALC 누적:
-                ${data.alc_total}개
-
-                <br>
-
-                ALC 오늘:
-                ${data.alc_today}개
-
-                <br><br>
-
                 P코드:
-                ${escapeHtml(
-                    data.p_code
-                    || "-"
-                )}
+                ${data.p_code}
 
                 <br>
 
                 부품번호:
-                ${escapeHtml(
-                    data.part_number
-                    || "-"
-                )}
-
-                <br>
-
-                생산일자:
-                ${escapeHtml(
-                    data.product_date
-                    || "-"
-                )}
-
-                <br>
-
-                스캔시간:
-                ${escapeHtml(
-                    data.scanned_at
-                    || "-"
-                )}
+                ${data.part_number || "-"}
 
             `;
 
-
-            // =================================================
-            // 현재 재고
-            // =================================================
-
-            document.getElementById(
-                "balance-total"
-            ).innerText =
-                data.balance_total
-                + "개";
-
-
-            document.getElementById(
-                "balance-frt"
-            ).innerText =
-                data.balance_frt;
-
-
-            document.getElementById(
-                "balance-rr"
-            ).innerText =
-                data.balance_rr;
-
-
-            // =================================================
-            // 오늘 생산
-            // =================================================
-
-            document.getElementById(
-                "today-production"
-            ).innerText =
-                data.today_production
-                + "개";
-
-
-            document.getElementById(
-                "production-finished-frt"
-            ).innerText =
-                data.production_finished_frt;
-
-
-            document.getElementById(
-                "production-finished-rr"
-            ).innerText =
-                data.production_finished_rr;
-
-
-            document.getElementById(
-                "production-semi-frt"
-            ).innerText =
-                data.production_semi_frt;
-
-
-            document.getElementById(
-                "production-semi-rr"
-            ).innerText =
-                data.production_semi_rr;
-
-
-            // =================================================
-            // 총재고
-            // =================================================
-
-            document.getElementById(
-                "stock-finished-frt"
-            ).innerText =
-                data.stock_finished_frt;
-
-
-            document.getElementById(
-                "stock-finished-rr"
-            ).innerText =
-                data.stock_finished_rr;
-
-
-            document.getElementById(
-                "stock-semi-frt"
-            ).innerText =
-                data.stock_semi_frt;
-
-
-            document.getElementById(
-                "stock-semi-rr"
-            ).innerText =
-                data.stock_semi_rr;
-
-
-            // =================================================
-            // 출고
-            // =================================================
-
-            document.getElementById(
-                "shipped-frt"
-            ).innerText =
-                data.shipped_frt;
-
-
-            document.getElementById(
-                "shipped-rr"
-            ).innerText =
-                data.shipped_rr;
-
-
-            // =================================================
-            // 불량
-            // =================================================
-
-            document.getElementById(
-                "defective-frt"
-            ).innerText =
-                data.defective_frt;
-
-
-            document.getElementById(
-                "defective-rr"
-            ).innerText =
-                data.defective_rr;
-
-
-            // =================================================
-            // 리워크 / 폐기 숫자
-            // =================================================
-
-            document.getElementById(
-                "rework-waiting"
-            ).innerText =
-                data.rework_waiting
-                + "개";
-
-
-            document.getElementById(
-                "disposed-total"
-            ).innerText =
-                data.disposed_total
-                + "개";
-
-
-            // =================================================
-            // 표
-            // =================================================
-
-            updateAlcTable(
-                data.alc_counts
+            setTimeout(
+                () =>
+                    location.reload(),
+                900
             );
-
-
-            updateTodayAlcTable(
-                data.today_alc_counts
-            );
-
-
-            updateDateTable(
-                data.date_counts
-            );
-
-
-            updateRecentTable(
-                data.scans
-            );
-
 
             return;
-
         }
 
     }
@@ -2771,31 +1864,20 @@ async function scanFrame(video) {
 
         stopCamera();
 
-
         document.getElementById(
             "result"
         ).innerText =
-            "❌ 오류\n\n"
-            + error.message;
-
+            error.message;
 
         return;
-
     }
 
-
-    if (
-        alreadyScanning
-    ) {
-
-        requestAnimationFrame(
-            () =>
-                scanFrame(
-                    video
-                )
-        );
-
-    }
+    requestAnimationFrame(
+        () =>
+            scanFrame(
+                video
+            )
+    );
 
 }
 
@@ -2808,94 +1890,117 @@ async function returnRework(
     itemId
 ) {
 
-    const firstConfirm =
-        confirm(
-
-            "🔧 리워크가 완료되었습니까?\n\n"
-            +
-            "확인을 누르면 이 제품을 당일생산분으로 복귀시킵니다."
-
-        );
-
-
     if (
-        !firstConfirm
+        !confirm(
+            "리워크를 완료하고 당일생산분으로 복귀할까요?"
+        )
     ) {
 
         return;
-
     }
 
+    const response =
+        await fetch(
 
-    try {
+            "/rework/return/"
+            + itemId,
 
-        const response =
-            await fetch(
-
-                "/rework/return/"
-                + itemId,
-
-                {
-
-                    method:
-                        "POST",
-
-                    cache:
-                        "no-store"
-
-                }
-
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if (
-            response.ok
-            &&
-            data.success
-        ) {
-
-            alert(
-                "✅ 리워크 완료!\n\n"
-                +
-                "당일생산분으로 복귀했습니다."
-            );
-
-
-            window.location.reload();
-
-            return;
-        }
-
-
-        alert(
-
-            "❌ 처리 실패\n\n"
-            +
-            (
-                data.error
-                ||
-                "알 수 없는 오류"
-            )
+            {
+                method:
+                    "POST"
+            }
 
         );
 
-    }
+    const data =
+        await response.json();
 
-    catch (error) {
+    if (
+        response.ok
+        &&
+        data.success
+    ) {
 
         alert(
+            "✅ 당일생산분으로 복귀했습니다."
+        );
 
-            "❌ 오류\n\n"
-            +
-            error.message
+        location.reload();
+
+        return;
+    }
+
+    alert(
+        data.error
+        ||
+        "처리 실패"
+    );
+
+}
+
+
+// =========================================================
+// 바로 폐기
+// =========================================================
+
+async function disposeRework(
+    itemId
+) {
+
+    if (
+        !confirm(
+            "🗑️ 이 제품을 바로 폐기할까요?"
+        )
+    ) {
+
+        return;
+    }
+
+    if (
+        !confirm(
+            "정말 폐기하시겠습니까?"
+        )
+    ) {
+
+        return;
+    }
+
+    const response =
+        await fetch(
+
+            "/rework/dispose/"
+            + itemId,
+
+            {
+                method:
+                    "POST"
+            }
 
         );
 
+    const data =
+        await response.json();
+
+    if (
+        response.ok
+        &&
+        data.success
+    ) {
+
+        alert(
+            "🗑️ 폐기 처리되었습니다."
+        );
+
+        location.reload();
+
+        return;
     }
+
+    alert(
+        data.error
+        ||
+        "폐기 처리 실패"
+    );
 
 }
 
@@ -2906,109 +2011,56 @@ async function returnRework(
 
 async function resetAllData() {
 
-    const firstConfirm =
-        confirm(
-
-            "⚠️ 정말 모든 데이터를 초기화할까요?\n\n"
-            +
-            "스캔 기록, 재고, 출고, 리워크, 폐기 기록이 모두 삭제됩니다."
-
-        );
-
-
     if (
-        !firstConfirm
+        !confirm(
+            "정말 모든 데이터를 초기화할까요?"
+        )
     ) {
 
         return;
-
     }
 
-
-    const secondConfirm =
-        confirm(
-
-            "🚨 마지막 확인입니다.\n\n"
-            +
-            "삭제한 데이터는 복구할 수 없습니다.\n"
-            +
-            "정말 초기화하시겠습니까?"
-
-        );
-
-
     if (
-        !secondConfirm
+        !confirm(
+            "삭제한 데이터는 복구할 수 없습니다.\n정말 초기화할까요?"
+        )
     ) {
 
         return;
-
     }
 
-
-    try {
-
-        const response =
-            await fetch(
-                "/reset",
-                {
-
-                    method:
-                        "POST",
-
-                    cache:
-                        "no-store"
-
-                }
-            );
-
-
-        const data =
-            await response.json();
-
-
-        if (
-            response.ok
-            &&
-            data.success
-        ) {
-
-            alert(
-                "✅ 모든 데이터가 초기화되었습니다."
-            );
-
-
-            window.location.reload();
-
-            return;
-        }
-
-
-        alert(
-
-            "❌ 초기화 실패\n\n"
-            +
-            (
-                data.error
-                ||
-                "알 수 없는 오류"
-            )
-
+    const response =
+        await fetch(
+            "/reset",
+            {
+                method:
+                    "POST"
+            }
         );
 
-    }
+    const data =
+        await response.json();
 
-    catch (error) {
+    if (
+        response.ok
+        &&
+        data.success
+    ) {
 
         alert(
-
-            "❌ 초기화 오류\n\n"
-            +
-            error.message
-
+            "초기화 완료"
         );
 
+        location.reload();
+
+        return;
     }
+
+    alert(
+        data.error
+        ||
+        "초기화 실패"
+    );
 
 }
 
