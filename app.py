@@ -74,11 +74,6 @@ def init_db():
         )
     """)
 
-
-    # =====================================================
-    # 기존 DB에 필요한 컬럼 자동 추가
-    # =====================================================
-
     columns = conn.execute(
         "PRAGMA table_info(scans)"
     ).fetchall()
@@ -88,34 +83,18 @@ def init_db():
         for row in columns
     ]
 
-
     required_columns = {
 
-        "main_category":
-            "TEXT",
+        "main_category": "TEXT",
+        "sub_category": "TEXT",
+        "alc_code": "TEXT",
+        "alc_type": "TEXT",
+        "p_code": "TEXT",
+        "part_number": "TEXT",
+        "product_date": "TEXT",
+        "scanned_at": "TEXT"
 
-        "sub_category":
-            "TEXT",
-
-        "alc_code":
-            "TEXT",
-
-        "alc_type":
-            "TEXT",
-
-        "p_code":
-            "TEXT",
-
-        "part_number":
-            "TEXT",
-
-        "product_date":
-            "TEXT",
-
-        "scanned_at":
-            "TEXT"
     }
-
 
     for column_name, column_type in required_columns.items():
 
@@ -129,16 +108,12 @@ def init_db():
             )
 
 
-    # =====================================================
-    # 기존 "재고" 기록 → "총재고"로 변경
-    # =====================================================
-
+    # 과거 "재고" 데이터가 있다면 "총재고"로 변경
     conn.execute("""
         UPDATE scans
         SET main_category = '총재고'
         WHERE main_category = '재고'
     """)
-
 
     conn.commit()
 
@@ -158,7 +133,6 @@ def parse_barcode(raw):
     part_number = ""
     product_date = ""
 
-
     if not raw:
 
         return (
@@ -171,7 +145,7 @@ def parse_barcode(raw):
 
 
     # =====================================================
-    # 여러 Data Matrix가 #으로 붙어 있는 경우
+    # 여러 Data Matrix가 #으로 연결된 경우
     # =====================================================
 
     records = raw.split("#")
@@ -180,7 +154,6 @@ def parse_barcode(raw):
     for record in records:
 
         fields = record.split("\x1d")
-
 
         record_alc = ""
         record_alc_type = ""
@@ -195,22 +168,26 @@ def parse_barcode(raw):
             field = field.strip()
 
             if not field:
+
                 continue
 
 
             # =================================================
             # ALC
             #
-            # 반드시 S 필드에서만 인식
+            # 현재 규칙:
             #
-            # SU304 -> U304 -> FRT
-            # SL123 -> L123 -> FRT
+            # S + U... -> U... -> FRT
+            # S + L... -> L... -> FRT
             #
-            # SRA8  -> RA8  -> RR
-            # SR148 -> R148 -> RR
-            # SS123 -> S123 -> RR
+            # S + R... -> R... -> RR
+            # S + S... -> S... -> RR
             #
-            # VR148 등 V 필드는 무시
+            # 예:
+            # SU304 -> U304
+            # SRA8  -> RA8
+            #
+            # V로 시작하는 필드는 ALC로 쓰지 않음
             # =================================================
 
             if (
@@ -225,7 +202,6 @@ def parse_barcode(raw):
                     .upper()
                 )
 
-
                 if re.fullmatch(
                     r"[ULRS][A-Z0-9]+",
                     candidate
@@ -233,14 +209,12 @@ def parse_barcode(raw):
 
                     record_alc = candidate
 
-
                     if candidate[0] in (
                         "U",
                         "L"
                     ):
 
                         record_alc_type = "FRT"
-
 
                     elif candidate[0] in (
                         "R",
@@ -269,9 +243,8 @@ def parse_barcode(raw):
             # =================================================
             # 부품번호
             #
-            # CL4-EEC87-00000107
-            # ->
-            # L4-EEC87-00000107
+            # CL4-EEC...
+            # -> L4-EEC...
             # =================================================
 
             if (
@@ -288,9 +261,8 @@ def parse_barcode(raw):
             # =================================================
             # 생산일자
             #
-            # T260807...
-            # ->
-            # 2026-08-07
+            # T260730...
+            # -> 2026-07-30
             # =================================================
 
             if (
@@ -301,12 +273,11 @@ def parse_barcode(raw):
 
                 date_text = field[1:7]
 
-
                 if date_text.isdigit():
 
                     year = (
-                        "20" +
-                        date_text[0:2]
+                        "20"
+                        + date_text[0:2]
                     )
 
                     month = (
@@ -316,7 +287,6 @@ def parse_barcode(raw):
                     day = (
                         date_text[4:6]
                     )
-
 
                     try:
 
@@ -336,22 +306,14 @@ def parse_barcode(raw):
                         pass
 
 
-        # =====================================================
-        # 정상 ALC가 있는 첫 번째 레코드 사용
-        # =====================================================
-
+        # 정상 ALC가 있는 첫 번째 레코드
         if record_alc:
 
             alc_code = record_alc
-
-            alc_type = (
-                record_alc_type
-            )
+            alc_type = record_alc_type
 
             p_code = record_p
-
             part_number = record_part
-
             product_date = record_date
 
             break
@@ -385,7 +347,7 @@ def parse_barcode(raw):
 
 
 # =========================================================
-# 숫자 조회
+# COUNT 함수
 # =========================================================
 
 def count_query(
@@ -536,12 +498,10 @@ def get_statistics(conn):
         + stock_semi_frt
     )
 
-
     stock_rr = (
         stock_finished_rr
         + stock_semi_rr
     )
-
 
     stock_total = (
         stock_frt
@@ -664,9 +624,7 @@ def get_statistics(conn):
 
 
     # =====================================================
-    # 현재 합계
-    #
-    # 총재고 - 출고
+    # 현재 재고 = 총재고 - 출고
     # =====================================================
 
     balance_frt = (
@@ -674,12 +632,10 @@ def get_statistics(conn):
         - shipped_frt
     )
 
-
     balance_rr = (
         stock_rr
         - shipped_rr
     )
-
 
     balance_total = (
         stock_total
@@ -754,7 +710,6 @@ def get_statistics(conn):
 
     return {
 
-        # 당일생산
         "today_production":
             today_production,
 
@@ -771,7 +726,6 @@ def get_statistics(conn):
             production_semi_rr,
 
 
-        # 총재고
         "stock_finished_frt":
             stock_finished_frt,
 
@@ -794,7 +748,6 @@ def get_statistics(conn):
             stock_total,
 
 
-        # 출고
         "shipped_frt":
             shipped_frt,
 
@@ -811,7 +764,6 @@ def get_statistics(conn):
             shipped_today_rr,
 
 
-        # 불량
         "defective_frt":
             defective_frt,
 
@@ -825,7 +777,6 @@ def get_statistics(conn):
             defective_today_rr,
 
 
-        # 현재 합계
         "balance_frt":
             balance_frt,
 
@@ -855,6 +806,7 @@ def get_statistics(conn):
             dict(row)
             for row in scan_rows
         ]
+
     }
 
 
@@ -872,7 +824,6 @@ def index():
     )
 
     conn.close()
-
 
     return render_template(
         "index.html",
@@ -894,7 +845,6 @@ def scan():
 
         data = request.get_json()
 
-
         if not data:
 
             return jsonify({
@@ -909,18 +859,15 @@ def scan():
             ""
         )
 
-
         main_category = data.get(
             "main_category",
             ""
         ).strip()
 
-
         sub_category = data.get(
             "sub_category",
             ""
         ).strip()
-
 
         selected_alc_type = data.get(
             "selected_alc_type",
@@ -928,8 +875,17 @@ def scan():
         ).strip()
 
 
+        print()
+        print("==============================")
+        print("바코드 원본 데이터")
+        print("==============================")
+        print(repr(raw))
+        print("==============================")
+        print()
+
+
         # =================================================
-        # 업무 카테고리 검사
+        # 카테고리
         # =================================================
 
         if main_category not in (
@@ -946,12 +902,7 @@ def scan():
             }), 400
 
 
-        # =================================================
         # 당일생산 / 총재고
-        #
-        # 완제품 / 반제품 필요
-        # =================================================
-
         if main_category in (
             "당일생산분",
             "총재고"
@@ -969,20 +920,13 @@ def scan():
                 }), 400
 
 
-        # =================================================
-        # 출고 / 불량은
-        # 완제품/반제품 구분 없음
-        # =================================================
-
+        # 출고 / 불량
         else:
 
             sub_category = ""
 
 
-        # =================================================
-        # FRT / RR 선택 필수
-        # =================================================
-
+        # FRT / RR
         if selected_alc_type not in (
             "FRT",
             "RR"
@@ -1005,7 +949,7 @@ def scan():
 
 
         # =================================================
-        # 바코드 분석
+        # 분석
         # =================================================
 
         (
@@ -1019,6 +963,14 @@ def scan():
         )
 
 
+        print("분석 결과")
+        print("ALC:", alc_code)
+        print("ALC 구분:", alc_type)
+        print("P코드:", p_code)
+        print("부품번호:", part_number)
+        print("생산일자:", product_date)
+
+
         if not alc_code:
 
             return jsonify({
@@ -1029,7 +981,7 @@ def scan():
 
 
         # =================================================
-        # 선택한 FRT/RR과 실제 ALC 검사
+        # 선택한 FRT/RR 검사
         # =================================================
 
         if selected_alc_type != alc_type:
@@ -1041,8 +993,8 @@ def scan():
                 "error":
                     "ALC 구분이 일치하지 않습니다.\n\n"
                     f"선택: {selected_alc_type}\n"
-                    f"실제: {alc_type}\n"
-                    f"ALC: {alc_code}"
+                    f"실제 인식: {alc_type}\n"
+                    f"인식된 ALC: {alc_code}"
 
             }), 400
 
@@ -1091,10 +1043,6 @@ def scan():
         conn.commit()
 
 
-        # =================================================
-        # ALC 누적
-        # =================================================
-
         alc_total = count_query(
             conn,
             """
@@ -1102,7 +1050,9 @@ def scan():
             FROM scans
             WHERE alc_code = ?
             """,
-            (alc_code,)
+            (
+                alc_code,
+            )
         )
 
 
@@ -1136,8 +1086,7 @@ def scan():
 
         response_data = {
 
-            "success":
-                True,
+            "success": True,
 
             "main_category":
                 main_category,
@@ -1188,7 +1137,6 @@ def scan():
             str(e)
         )
 
-
         return jsonify({
             "success": False,
             "error": str(e)
@@ -1196,14 +1144,13 @@ def scan():
 
 
 # =========================================================
-# Excel 다운로드
+# Excel
 # =========================================================
 
 @app.route("/export.xlsx")
 def export_excel():
 
     conn = get_db()
-
 
     stats = get_statistics(
         conn
@@ -1217,13 +1164,11 @@ def export_excel():
     """).fetchall()
 
 
-    # =====================================================
-    # 일자별 재고 변동 조회
-    # =====================================================
-
     daily_rows = conn.execute("""
         SELECT
-            DATE(scanned_at) AS date,
+
+            DATE(scanned_at)
+            AS date,
 
             SUM(
                 CASE
@@ -1231,7 +1176,8 @@ def export_excel():
                 THEN 1
                 ELSE 0
                 END
-            ) AS stock_added,
+            )
+            AS stock_added,
 
             SUM(
                 CASE
@@ -1239,7 +1185,8 @@ def export_excel():
                 THEN 1
                 ELSE 0
                 END
-            ) AS shipped
+            )
+            AS shipped
 
         FROM scans
 
@@ -1259,22 +1206,7 @@ def export_excel():
 
 
     # =====================================================
-    # 스타일
-    # =====================================================
-
-    header_fill = PatternFill(
-        "solid",
-        fgColor="D9EAF7"
-    )
-
-
-    header_font = Font(
-        bold=True
-    )
-
-
-    # =====================================================
-    # 1. 요약
+    # 요약
     # =====================================================
 
     ws = wb.active
@@ -1282,9 +1214,14 @@ def export_excel():
     ws.title = "요약"
 
 
-    summary_rows = [
+    rows = [
 
-        ["항목", "FRT", "RR", "합계"],
+        [
+            "항목",
+            "FRT",
+            "RR",
+            "합계"
+        ],
 
         [
             "누적 총재고",
@@ -1301,7 +1238,7 @@ def export_excel():
         ],
 
         [
-            "현재 재고 합계",
+            "현재 재고",
             stats["balance_frt"],
             stats["balance_rr"],
             stats["balance_total"]
@@ -1316,51 +1253,19 @@ def export_excel():
                 + stats["defective_rr"]
             )
         ]
+
     ]
 
 
-    for row in summary_rows:
+    for row in rows:
 
         ws.append(
             row
         )
 
 
-    # 세부 총재고
-    ws.append([])
-
-    ws.append([
-        "총재고 세부",
-        "FRT",
-        "RR",
-        "합계"
-    ])
-
-
-    ws.append([
-        "완제품",
-        stats["stock_finished_frt"],
-        stats["stock_finished_rr"],
-        (
-            stats["stock_finished_frt"]
-            + stats["stock_finished_rr"]
-        )
-    ])
-
-
-    ws.append([
-        "반제품",
-        stats["stock_semi_frt"],
-        stats["stock_semi_rr"],
-        (
-            stats["stock_semi_frt"]
-            + stats["stock_semi_rr"]
-        )
-    ])
-
-
     # =====================================================
-    # 2. 일자별 재고
+    # 일자별
     # =====================================================
 
     ws_daily = wb.create_sheet(
@@ -1369,12 +1274,14 @@ def export_excel():
 
 
     ws_daily.append([
+
         "날짜",
         "당일 재고 추가",
         "당일 출고",
         "누적 총재고",
         "누적 출고",
         "현재 재고"
+
     ])
 
 
@@ -1394,7 +1301,6 @@ def export_excel():
             or 0
         )
 
-
         cumulative_stock += (
             stock_added
         )
@@ -1403,12 +1309,10 @@ def export_excel():
             shipped
         )
 
-
         current_balance = (
             cumulative_stock
             - cumulative_shipped
         )
-
 
         ws_daily.append([
 
@@ -1428,7 +1332,7 @@ def export_excel():
 
 
     # =====================================================
-    # 3. ALC 수량
+    # ALC
     # =====================================================
 
     ws_alc = wb.create_sheet(
@@ -1448,16 +1352,14 @@ def export_excel():
         ws_alc.append([
 
             row["alc_type"],
-
             row["alc_code"],
-
             row["count"]
 
         ])
 
 
     # =====================================================
-    # 4. 전체 스캔 기록
+    # 전체 기록
     # =====================================================
 
     ws_scan = wb.create_sheet(
@@ -1468,21 +1370,13 @@ def export_excel():
     ws_scan.append([
 
         "번호",
-
         "업무구분",
-
         "제품종류",
-
         "ALC구분",
-
         "ALC",
-
         "P코드",
-
         "부품번호",
-
         "생산일자",
-
         "스캔시간"
 
     ])
@@ -1517,17 +1411,23 @@ def export_excel():
     # 스타일
     # =====================================================
 
+    header_fill = PatternFill(
+        "solid",
+        fgColor="D9EAF7"
+    )
+
+    header_font = Font(
+        bold=True
+    )
+
+
     for sheet in wb.worksheets:
 
         for cell in sheet[1]:
 
-            cell.font = (
-                header_font
-            )
+            cell.font = header_font
 
-            cell.fill = (
-                header_fill
-            )
+            cell.fill = header_fill
 
             cell.alignment = Alignment(
                 horizontal="center"
@@ -1596,20 +1496,15 @@ def export_excel():
             "vnd.openxmlformats-officedocument."
             "spreadsheetml.sheet"
         )
-
     )
 
 
 # =========================================================
-# DB 초기화
+# 시작
 # =========================================================
 
 init_db()
 
-
-# =========================================================
-# 로컬 실행
-# =========================================================
 
 if __name__ == "__main__":
 
