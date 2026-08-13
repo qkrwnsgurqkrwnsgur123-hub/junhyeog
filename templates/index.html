@@ -231,24 +231,73 @@ h2 {
 ===================================================== */
 
 #reader {
+    width: min(var(--camera-width, 500px), 100%);
+    height: var(--camera-height, 360px);
+    max-width: 100%;
+    margin: 20px auto;
+    background: black;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+    transition: width 0.18s ease, height 0.18s ease;
+}
 
-    width:
-        100%;
+#reader.camera-fullscreen-like {
+    width: min(96vw, 1100px);
+    height: min(78vh, 760px);
+}
 
-    max-width:
-        500px;
+.camera-size-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    max-width: 500px;
+    margin: 14px auto 0;
+    padding-top: 14px;
+    border-top: 1px solid #e5e5e5;
+}
 
-    margin:
-        20px auto;
+.camera-size-row {
+    display: grid;
+    grid-template-columns: 92px 1fr 62px;
+    gap: 8px;
+    align-items: center;
+}
 
-    background:
-        black;
+.camera-size-row label {
+    font-size: 14px;
+    font-weight: bold;
+    text-align: left;
+}
 
-    border-radius:
-        15px;
+.camera-size-row input[type="range"] {
+    width: 100%;
+}
 
-    overflow:
-        hidden;
+.camera-size-value {
+    font-size: 13px;
+    font-weight: bold;
+    text-align: right;
+}
+
+.camera-size-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.camera-size-button {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 6px;
+    font-weight: bold;
+    cursor: pointer;
+    background: #eeeeee;
+}
+
+.camera-size-button.active {
+    background: #222;
+    color: white;
 }
 
 #scan-button {
@@ -351,7 +400,8 @@ h2 {
 #reader video {
     display: block;
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
     transform-origin: center center;
     transition: transform 0.15s ease;
 }
@@ -1105,6 +1155,42 @@ RR
     style="font-size: 18px; font-weight: bold; margin-bottom: 10px;"
 >
 🔍 Galaxy 카메라 확대 / 초점
+</div>
+
+<div class="camera-size-grid">
+
+    <div style="font-size: 16px; font-weight: bold;">📐 카메라 화면 크기</div>
+
+    <div class="camera-size-row">
+        <label for="camera-width-slider">가로 크기</label>
+        <input id="camera-width-slider" type="range" min="240" max="1100" step="10" value="500" oninput="changeCameraDisplaySize()">
+        <div id="camera-width-value" class="camera-size-value">500px</div>
+    </div>
+
+    <div class="camera-size-row">
+        <label for="camera-height-slider">세로 크기</label>
+        <input id="camera-height-slider" type="range" min="180" max="800" step="10" value="360" oninput="changeCameraDisplaySize()">
+        <div id="camera-height-value" class="camera-size-value">360px</div>
+    </div>
+
+    <div class="camera-size-buttons">
+        <button type="button" class="camera-size-button" onclick="setCameraDisplayPreset('small')">작게</button>
+        <button type="button" class="camera-size-button active" onclick="setCameraDisplayPreset('medium')">보통</button>
+        <button type="button" class="camera-size-button" onclick="setCameraDisplayPreset('large')">크게</button>
+        <button type="button" class="camera-size-button" onclick="toggleCameraFullscreenLike()">최대</button>
+    </div>
+
+    <div class="camera-size-buttons">
+        <button type="button" class="camera-size-button" onclick="setCameraAspectRatio(1, 1)">1:1</button>
+        <button type="button" class="camera-size-button" onclick="setCameraAspectRatio(4, 3)">4:3</button>
+        <button type="button" class="camera-size-button" onclick="setCameraAspectRatio(16, 9)">16:9</button>
+        <button type="button" class="camera-size-button" onclick="fitCameraToScreen()">화면맞춤</button>
+    </div>
+
+    <div style="font-size:12px; color:#888; line-height:1.5;">
+        카메라 창의 표시 크기만 바뀝니다. 바코드 판독은 원본 카메라 프레임을 사용하므로 스캔 해상도는 유지됩니다.
+    </div>
+
 </div>
 
 <div class="camera-select-row">
@@ -2350,6 +2436,100 @@ function stopCamera() {
         false;
 }
 
+
+// =========================================================
+// 카메라 화면 크기 조절
+// =========================================================
+
+function applyCameraDisplaySize(width, height, save = true) {
+    const reader = document.getElementById("reader");
+    const widthSlider = document.getElementById("camera-width-slider");
+    const heightSlider = document.getElementById("camera-height-slider");
+    const widthValue = document.getElementById("camera-width-value");
+    const heightValue = document.getElementById("camera-height-value");
+
+    width = Math.max(240, Math.min(1100, Number(width) || 500));
+    height = Math.max(180, Math.min(800, Number(height) || 360));
+
+    document.documentElement.style.setProperty("--camera-width", width + "px");
+    document.documentElement.style.setProperty("--camera-height", height + "px");
+
+    if (reader) reader.classList.remove("camera-fullscreen-like");
+    if (widthSlider) widthSlider.value = width;
+    if (heightSlider) heightSlider.value = height;
+    if (widthValue) widthValue.innerText = width + "px";
+    if (heightValue) heightValue.innerText = height + "px";
+
+    if (save) {
+        try {
+            localStorage.setItem("cameraDisplayWidth", String(width));
+            localStorage.setItem("cameraDisplayHeight", String(height));
+        } catch (_) {}
+    }
+}
+
+function changeCameraDisplaySize() {
+    const width = document.getElementById("camera-width-slider")?.value || 500;
+    const height = document.getElementById("camera-height-slider")?.value || 360;
+    applyCameraDisplaySize(width, height, true);
+    document.querySelectorAll(".camera-size-button").forEach(btn => btn.classList.remove("active"));
+}
+
+function setCameraDisplayPreset(mode) {
+    const presets = {
+        small: [320, 240],
+        medium: [500, 360],
+        large: [800, 560]
+    };
+    const value = presets[mode] || presets.medium;
+    applyCameraDisplaySize(value[0], value[1], true);
+
+    const buttons = document.querySelectorAll(".camera-size-buttons:first-of-type .camera-size-button");
+    buttons.forEach(btn => btn.classList.remove("active"));
+    const index = mode === "small" ? 0 : mode === "large" ? 2 : 1;
+    if (buttons[index]) buttons[index].classList.add("active");
+}
+
+function setCameraAspectRatio(w, h) {
+    const widthSlider = document.getElementById("camera-width-slider");
+    const width = Number(widthSlider?.value || 500);
+    let height = Math.round(width * h / w);
+    height = Math.max(180, Math.min(800, height));
+    applyCameraDisplaySize(width, height, true);
+}
+
+function fitCameraToScreen() {
+    const width = Math.max(240, Math.min(1100, window.innerWidth - 24));
+    const height = Math.max(180, Math.min(800, Math.round(window.innerHeight * 0.55)));
+    applyCameraDisplaySize(width, height, true);
+}
+
+function toggleCameraFullscreenLike() {
+    const reader = document.getElementById("reader");
+    if (!reader) return;
+
+    const enabled = reader.classList.toggle("camera-fullscreen-like");
+    if (enabled) {
+        const widthValue = document.getElementById("camera-width-value");
+        const heightValue = document.getElementById("camera-height-value");
+        if (widthValue) widthValue.innerText = "최대";
+        if (heightValue) heightValue.innerText = "최대";
+    } else {
+        changeCameraDisplaySize();
+    }
+}
+
+function restoreCameraDisplaySize() {
+    let width = 500;
+    let height = 360;
+    try {
+        width = Number(localStorage.getItem("cameraDisplayWidth")) || width;
+        height = Number(localStorage.getItem("cameraDisplayHeight")) || height;
+    } catch (_) {}
+    applyCameraDisplaySize(width, height, false);
+}
+
+document.addEventListener("DOMContentLoaded", restoreCameraDisplaySize);
 
 // =========================================================
 // 스캔 시작
