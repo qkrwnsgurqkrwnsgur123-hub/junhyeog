@@ -1024,6 +1024,46 @@ RR
 </button>
 
 
+<div
+    id="zoom-control"
+    class="card"
+    style="margin-top: 10px;"
+>
+
+<div
+    style="font-size: 18px; font-weight: bold; margin-bottom: 10px;"
+>
+🔍 카메라 확대
+</div>
+
+<input
+    id="zoom-slider"
+    type="range"
+    min="1"
+    max="5"
+    step="0.1"
+    value="2"
+    disabled
+    style="width: 80%; max-width: 400px;"
+>
+
+<div
+    id="zoom-value"
+    style="font-size: 24px; font-weight: bold; margin-top: 8px;"
+>
+2.0x
+</div>
+
+<div
+    id="camera-status"
+    style="font-size: 13px; color: #666; margin-top: 8px;"
+>
+카메라 시작 후 지원되는 확대 범위가 자동 적용됩니다.
+</div>
+
+</div>
+
+
 <div id="result">
 스캔 대기 중
 </div>
@@ -2009,6 +2049,8 @@ let alreadyScanning = false;
 
 let currentStream = null;
 
+let currentVideoTrack = null;
+
 let selectedMainCategory = "";
 
 let selectedSubCategory = "";
@@ -2155,6 +2197,9 @@ function stopCamera() {
             null;
     }
 
+    currentVideoTrack =
+        null;
+
     alreadyScanning =
         false;
 }
@@ -2256,15 +2301,31 @@ async function startScanner() {
 
                 video: {
 
-                    facingMode:
-                        "environment"
+                    facingMode: {
+                        ideal: "environment"
+                    },
 
-                }
+                    width: {
+                        ideal: 1920
+                    },
+
+                    height: {
+                        ideal: 1080
+                    }
+
+                },
+
+                audio: false
 
             });
 
         video.srcObject =
             currentStream;
+
+        currentVideoTrack =
+            currentStream.getVideoTracks()[0];
+
+        await applyCameraEnhancement();
 
         video.addEventListener(
             "loadeddata",
@@ -2290,6 +2351,321 @@ async function startScanner() {
             +
             error.message;
     }
+}
+
+
+// =========================================================
+// 카메라 화질 / 초점 / 줌 설정
+// =========================================================
+
+async function applyCameraEnhancement() {
+
+    if (!currentVideoTrack) {
+
+        return;
+    }
+
+    const status =
+        document.getElementById(
+            "camera-status"
+        );
+
+    const slider =
+        document.getElementById(
+            "zoom-slider"
+        );
+
+    const zoomText =
+        document.getElementById(
+            "zoom-value"
+        );
+
+    try {
+
+        const capabilities =
+            currentVideoTrack.getCapabilities
+                ? currentVideoTrack.getCapabilities()
+                : {};
+
+        console.log(
+            "카메라 지원 기능:",
+            capabilities
+        );
+
+        let focusApplied = false;
+        let zoomApplied = false;
+
+        // 연속 자동초점
+        try {
+
+            if (
+                capabilities.focusMode
+                &&
+                capabilities.focusMode.includes(
+                    "continuous"
+                )
+            ) {
+
+                await currentVideoTrack
+                    .applyConstraints({
+
+                        advanced: [
+                            {
+                                focusMode: "continuous"
+                            }
+                        ]
+
+                    });
+
+                focusApplied = true;
+            }
+
+        }
+
+        catch (focusError) {
+
+            console.log(
+                "자동초점 설정 실패:",
+                focusError
+            );
+        }
+
+        // 기본 2배 줌
+        try {
+
+            if (capabilities.zoom) {
+
+                const minZoom =
+                    Number(
+                        capabilities.zoom.min
+                    );
+
+                const maxZoom =
+                    Number(
+                        capabilities.zoom.max
+                    );
+
+                const stepZoom =
+                    Number(
+                        capabilities.zoom.step
+                        ||
+                        0.1
+                    );
+
+                let targetZoom =
+                    2;
+
+                targetZoom =
+                    Math.max(
+                        minZoom,
+                        targetZoom
+                    );
+
+                targetZoom =
+                    Math.min(
+                        maxZoom,
+                        targetZoom
+                    );
+
+                await currentVideoTrack
+                    .applyConstraints({
+
+                        advanced: [
+                            {
+                                zoom: targetZoom
+                            }
+                        ]
+
+                    });
+
+                if (slider) {
+
+                    slider.min =
+                        minZoom;
+
+                    slider.max =
+                        maxZoom;
+
+                    slider.step =
+                        stepZoom;
+
+                    slider.value =
+                        targetZoom;
+
+                    slider.disabled =
+                        false;
+                }
+
+                if (zoomText) {
+
+                    zoomText.innerText =
+                        targetZoom.toFixed(1)
+                        +
+                        "x";
+                }
+
+                zoomApplied = true;
+            }
+
+            else {
+
+                if (slider) {
+
+                    slider.disabled =
+                        true;
+                }
+
+                if (zoomText) {
+
+                    zoomText.innerText =
+                        "지원 안 함";
+                }
+            }
+
+        }
+
+        catch (zoomError) {
+
+            console.log(
+                "줌 설정 실패:",
+                zoomError
+            );
+        }
+
+        if (status) {
+
+            const focusMessage =
+                focusApplied
+                ?
+                "자동초점 ON"
+                :
+                "자동초점: 기기 기본값";
+
+            const zoomMessage =
+                zoomApplied
+                ?
+                "줌 조절 가능"
+                :
+                "줌 제어 미지원";
+
+            status.innerText =
+                "✅ "
+                +
+                focusMessage
+                +
+                " / "
+                +
+                zoomMessage;
+        }
+
+    }
+
+    catch (error) {
+
+        console.log(
+            "카메라 고급 설정 오류:",
+            error
+        );
+
+        if (status) {
+
+            status.innerText =
+                "카메라는 사용 가능하지만 고급 초점/줌 설정은 지원되지 않습니다.";
+        }
+    }
+}
+
+
+// =========================================================
+// 카메라 줌 변경
+// =========================================================
+
+async function changeCameraZoom(value) {
+
+    if (!currentVideoTrack) {
+
+        return;
+    }
+
+    try {
+
+        const capabilities =
+            currentVideoTrack.getCapabilities
+                ? currentVideoTrack.getCapabilities()
+                : {};
+
+        if (!capabilities.zoom) {
+
+            return;
+        }
+
+        let zoom =
+            Number(value);
+
+        zoom =
+            Math.max(
+                Number(capabilities.zoom.min),
+                zoom
+            );
+
+        zoom =
+            Math.min(
+                Number(capabilities.zoom.max),
+                zoom
+            );
+
+        await currentVideoTrack
+            .applyConstraints({
+
+                advanced: [
+                    {
+                        zoom: zoom
+                    }
+                ]
+
+            });
+
+        const zoomText =
+            document.getElementById(
+                "zoom-value"
+            );
+
+        if (zoomText) {
+
+            zoomText.innerText =
+                zoom.toFixed(1)
+                +
+                "x";
+        }
+
+    }
+
+    catch (error) {
+
+        console.log(
+            "줌 변경 오류:",
+            error
+        );
+    }
+}
+
+
+const zoomSlider =
+    document.getElementById(
+        "zoom-slider"
+    );
+
+if (zoomSlider) {
+
+    zoomSlider.addEventListener(
+        "input",
+        function () {
+
+            changeCameraZoom(
+                this.value
+            );
+        }
+    );
 }
 
 
