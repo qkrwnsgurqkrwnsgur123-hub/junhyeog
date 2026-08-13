@@ -1147,7 +1147,7 @@ RR
 </button>
 
 <div class="notice" id="auto-scan-notice">
-    ⚡ 자동 연속 스캔 모드 — 카테고리를 선택하면 카메라가 자동으로 시작됩니다.
+    ⚡ 자동 연속 스캔 모드 — 카테고리를 선택하고 카메라 권한을 최초 1회 허용하면 스트림을 계속 유지합니다.
 </div>
 
 
@@ -1221,7 +1221,7 @@ RR
         class="camera-action-button"
         onclick="selectBestGalaxyCamera()"
     >
-        🧭 최적 후면 카메라 자동 찾기
+        🧭 후면/망원 후보 선택 (권한 반복 없음)
     </button>
 
 </div>
@@ -2282,6 +2282,12 @@ let cameraDevices = [];
 let selectedCameraDeviceId = "";
 let selectedCameraLabel = "";
 let cameraSwitchInProgress = false;
+let cameraPermissionRequestedThisSession = false;
+
+try {
+    selectedCameraDeviceId = localStorage.getItem("preferredCameraDeviceId") || "";
+}
+catch (_) {}
 
 let selectedMainCategory = "";
 
@@ -2680,6 +2686,8 @@ async function startScanner() {
             };
         }
 
+        cameraPermissionRequestedThisSession = true;
+
         currentStream =
             await navigator.mediaDevices
             .getUserMedia({
@@ -2702,6 +2710,10 @@ async function startScanner() {
 
             if (settings.deviceId) {
                 selectedCameraDeviceId = settings.deviceId;
+                try {
+                    localStorage.setItem("preferredCameraDeviceId", selectedCameraDeviceId);
+                }
+                catch (_) {}
             }
 
             selectedCameraLabel =
@@ -2880,6 +2892,13 @@ async function switchCameraFromSelect() {
 
     selectedCameraDeviceId = select.value || "";
 
+    try {
+        if (selectedCameraDeviceId) {
+            localStorage.setItem("preferredCameraDeviceId", selectedCameraDeviceId);
+        }
+    }
+    catch (_) {}
+
     const selectedOption =
         select.options[select.selectedIndex];
 
@@ -3039,125 +3058,86 @@ async function selectBestGalaxyCamera() {
     const status =
         document.getElementById("camera-status");
 
-    if (!navigator.mediaDevices?.getUserMedia) {
-
+    if (!currentStream || !currentVideoTrack) {
         if (status) {
             status.innerText =
-                "❌ 이 브라우저에서는 카메라 기능을 사용할 수 없습니다.";
+                "📷 카테고리를 선택해 카메라를 한 번만 허용해주세요. 이후에는 같은 스트림을 계속 사용합니다.";
         }
         return;
     }
 
-    // 권한이 없으면 먼저 현재 카메라를 시작해야 카메라 라벨/장치가 제대로 보이는 경우가 많습니다.
-    if (!currentStream) {
-
-        if (status) {
-            status.innerText =
-                "📷 먼저 스캔 시작을 눌러 카메라 권한을 허용한 뒤 자동 찾기를 다시 눌러주세요.";
-        }
-        return;
-    }
-
-    if (status) {
-        status.innerText =
-            "🧭 후면 카메라를 확인하고 있습니다...";
-    }
-
+    // 중요: 권한 팝업 반복 방지를 위해 각 렌즈를 getUserMedia()로 하나씩 열어보지 않습니다.
+    // 이미 허용된 현재 스트림은 그대로 유지하고 enumerateDevices() 결과의 이름만으로 후보를 찾습니다.
     await refreshCameraList(false);
 
     if (!cameraDevices.length) {
-
         if (status) {
             status.innerText =
-                "⚠️ 사용할 수 있는 카메라를 찾지 못했습니다.";
+                "⚠️ 사용할 수 있는 카메라 목록을 찾지 못했습니다.";
         }
         return;
     }
 
-    // 현재 스트림은 probe 중 충돌을 피하기 위해 잠시 종료합니다.
-    const previousDeviceId =
-        selectedCameraDeviceId;
+    const currentId = selectedCameraDeviceId;
 
-    stopCamera();
+    const rearCandidates = cameraDevices.filter(device => {
+        const label = String(device.label || "");
+        return !isLikelyFrontCamera(label);
+    });
 
-    const results = [];
-
-    for (const device of cameraDevices) {
-
-        const result =
-            await probeCameraDevice(device);
-
-        // facingMode가 숨겨진 브라우저에서도 처음 environment로 열린 카메라는
-        // 후면일 가능성이 높으므로 가산점을 줍니다.
-        if (
-            previousDeviceId
-            && device.deviceId === previousDeviceId
-        ) {
-            result.score += 60;
-        }
-
-        results.push(result);
-    }
-
-    results.sort(
-        (a, b) => b.score - a.score
+    const teleCandidate = rearCandidates.find(device =>
+        isLikelyTelephotoCamera(device.label)
     );
 
-    console.table(
-        results.map(item => ({
-            label: item.label,
-            facingMode: item.facingMode || "",
-            zoomMax: item.zoomMax,
-            widthMax: item.widthMax || 0,
-            heightMax: item.heightMax || 0,
-            score: item.score
-        }))
+    const namedRearCandidate = rearCandidates.find(device =>
+        isLikelyRearCamera(device.label)
     );
 
-    const best =
-        results.find(item => item.score > -100);
+    const candidate =
+        teleCandidate
+        || namedRearCandidate
+        || cameraDevices.find(device => device.deviceId === currentId)
+        || rearCandidates[0]
+        || cameraDevices[0];
 
-    if (!best) {
-
-        selectedCameraDeviceId =
-            previousDeviceId || "";
-
+    if (!candidate) {
         if (status) {
             status.innerText =
-                "ℹ️ 자동 판별에 실패했습니다. 카메라 목록에서 직접 후면 렌즈를 선택해주세요.";
+                "ℹ️ 자동 판별에 실패했습니다. 현재 카메라를 그대로 사용합니다.";
         }
-
-        await startScanner();
         return;
     }
 
-    selectedCameraDeviceId =
-        best.device.deviceId;
+    // 현재 카메라가 이미 후보면 스트림을 절대 재시작하지 않습니다.
+    if (candidate.deviceId === currentId) {
+        if (status) {
+            status.innerText =
+                "✅ 현재 카메라를 계속 사용합니다. 추가 권한 요청 없이 자동 연속 스캔합니다.";
+        }
+        return;
+    }
 
-    selectedCameraLabel =
-        best.label || "선택된 후면 카메라";
+    selectedCameraDeviceId = candidate.deviceId;
+    selectedCameraLabel = candidate.label || "후면 카메라";
 
-    const select =
-        document.getElementById("camera-select");
+    try {
+        localStorage.setItem("preferredCameraDeviceId", selectedCameraDeviceId);
+    }
+    catch (_) {}
 
+    const select = document.getElementById("camera-select");
     if (select) {
         select.value = selectedCameraDeviceId;
     }
 
     if (status) {
-
-        const zoomInfo =
-            best.zoomMax > 1
-                ? ` / 실제 줌 최대 ${best.zoomMax.toFixed(1)}×`
-                : " / 실제 줌 API 미노출";
-
         status.innerText =
-            "✅ 최적 후면 카메라 후보를 선택했습니다"
-            + zoomInfo
-            + ". 카메라를 다시 시작합니다...";
+            "✅ 후면/망원 후보를 선택했습니다. 렌즈를 바꿀 때만 카메라 스트림을 한 번 전환합니다.";
     }
 
-    await startScanner();
+    // 물리 카메라를 바꾸는 경우에만 스트림을 재시작합니다.
+    // 이미 사이트 권한을 허용한 상태라면 일반적으로 추가 팝업 없이 전환됩니다.
+    await restartCameraWithSelection();
 }
 
 
