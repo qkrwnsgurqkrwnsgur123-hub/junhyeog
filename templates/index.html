@@ -286,6 +286,42 @@ h2 {
 
 
 /* =====================================================
+   카메라 확대 모드
+===================================================== */
+
+.zoom-mode-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    max-width: 500px;
+    margin: 12px auto 0;
+}
+
+.zoom-preset-button,
+.zoom-mode-button {
+    border: none;
+    border-radius: 10px;
+    padding: 11px 8px;
+    font-weight: bold;
+    cursor: pointer;
+    background: #eeeeee;
+}
+
+.zoom-preset-button.active,
+.zoom-mode-button.active {
+    background: #222;
+    color: white;
+}
+
+#reader video {
+    display: block;
+    width: 100%;
+    height: auto;
+    transform-origin: center center;
+    transition: transform 0.15s ease;
+}
+
+/* =====================================================
    결과
 ===================================================== */
 
@@ -1033,7 +1069,14 @@ RR
 <div
     style="font-size: 18px; font-weight: bold; margin-bottom: 10px;"
 >
-🔍 카메라 확대
+🔍 카메라 확대 / 초점
+</div>
+
+<div class="zoom-mode-buttons">
+    <button type="button" class="zoom-preset-button" onclick="setCameraZoomPreset(1)">1×</button>
+    <button type="button" class="zoom-preset-button" onclick="setCameraZoomPreset(1.5)">1.5×</button>
+    <button type="button" class="zoom-preset-button active" onclick="setCameraZoomPreset(2)">2×</button>
+    <button type="button" class="zoom-preset-button" onclick="setCameraZoomPreset(3)">3×</button>
 </div>
 
 <input
@@ -1044,7 +1087,7 @@ RR
     step="0.1"
     value="2"
     disabled
-    style="width: 80%; max-width: 400px;"
+    style="width: 80%; max-width: 400px; margin-top: 15px;"
 >
 
 <div
@@ -1054,15 +1097,33 @@ RR
 2.0x
 </div>
 
+<button
+    type="button"
+    id="software-zoom-button"
+    class="zoom-mode-button"
+    onclick="toggleSoftwareZoomMode()"
+    style="width: 100%; max-width: 400px; margin-top: 12px;"
+>
+🔎 확대 모드 OFF
+</button>
+
+<button
+    type="button"
+    class="zoom-mode-button"
+    onclick="refreshAutoFocus()"
+    style="width: 100%; max-width: 400px; margin-top: 8px;"
+>
+🎯 초점 다시 맞추기
+</button>
+
 <div
     id="camera-status"
-    style="font-size: 13px; color: #666; margin-top: 8px;"
+    style="font-size: 13px; color: #666; margin-top: 10px; line-height: 1.5;"
 >
-카메라 시작 후 지원되는 확대 범위가 자동 적용됩니다.
+카메라 시작 후 실제 줌 지원 여부를 확인합니다.
 </div>
 
 </div>
-
 
 <div id="result">
 스캔 대기 중
@@ -2051,6 +2112,12 @@ let currentStream = null;
 
 let currentVideoTrack = null;
 
+let hardwareZoomSupported = false;
+let softwareZoomMode = false;
+let softwareZoomLevel = 2;
+let softwareZoomCanvas = null;
+let currentVideoElement = null;
+
 let selectedMainCategory = "";
 
 let selectedSubCategory = "";
@@ -2200,6 +2267,12 @@ function stopCamera() {
     currentVideoTrack =
         null;
 
+    currentVideoElement =
+        null;
+
+    hardwareZoomSupported =
+        false;
+
     alreadyScanning =
         false;
 }
@@ -2294,6 +2367,9 @@ async function startScanner() {
         reader.appendChild(
             video
         );
+
+        currentVideoElement =
+            video;
 
         currentStream =
             await navigator.mediaDevices
@@ -2435,6 +2511,8 @@ async function applyCameraEnhancement() {
 
             if (capabilities.zoom) {
 
+                hardwareZoomSupported = true;
+
                 const minZoom =
                     Number(
                         capabilities.zoom.min
@@ -2509,16 +2587,23 @@ async function applyCameraEnhancement() {
 
             else {
 
+                hardwareZoomSupported = false;
+
                 if (slider) {
 
-                    slider.disabled =
-                        true;
+                    slider.min = 1;
+                    slider.max = 4;
+                    slider.step = 0.1;
+                    slider.value = softwareZoomLevel;
+                    slider.disabled = false;
                 }
 
                 if (zoomText) {
 
                     zoomText.innerText =
-                        "지원 안 함";
+                        softwareZoomLevel.toFixed(1)
+                        +
+                        "x (확대모드 가능)";
                 }
             }
 
@@ -2546,7 +2631,7 @@ async function applyCameraEnhancement() {
                 ?
                 "줌 조절 가능"
                 :
-                "줌 제어 미지원";
+                "실제 줌 미지원 · 확대 모드 사용 가능";
 
             status.innerText =
                 "✅ "
@@ -2582,7 +2667,385 @@ async function applyCameraEnhancement() {
 
 async function changeCameraZoom(value) {
 
+    const requestedZoom =
+        Number(value);
+
+    softwareZoomLevel =
+        Math.max(1, requestedZoom);
+
+    updateZoomPresetButtons(
+        softwareZoomLevel
+    );
+
+    // 실제 카메라 줌을 지원하는 기기
+    if (
+        currentVideoTrack
+        &&
+        hardwareZoomSupported
+    ) {
+
+        try {
+
+            const capabilities =
+                currentVideoTrack.getCapabilities
+                    ? currentVideoTrack.getCapabilities()
+                    : {};
+
+            if (capabilities.zoom) {
+
+                let zoom =
+                    requestedZoom;
+
+                zoom =
+                    Math.max(
+                        Number(capabilities.zoom.min),
+                        zoom
+                    );
+
+                zoom =
+                    Math.min(
+                        Number(capabilities.zoom.max),
+                        zoom
+                    );
+
+                await currentVideoTrack
+                    .applyConstraints({
+
+                        advanced: [
+                            {
+                                zoom: zoom
+                            }
+                        ]
+
+                    });
+
+                const zoomText =
+                    document.getElementById(
+                        "zoom-value"
+                    );
+
+                if (zoomText) {
+                    zoomText.innerText =
+                        zoom.toFixed(1)
+                        +
+                        "x";
+                }
+
+                return;
+            }
+
+        }
+        catch (error) {
+
+            console.log(
+                "실제 카메라 줌 변경 오류:",
+                error
+            );
+        }
+    }
+
+    // 실제 줌을 지원하지 않으면 확대 모드에서 소프트웨어 줌 사용
+    if (softwareZoomMode) {
+
+        applySoftwareZoomPreview();
+
+        const zoomText =
+            document.getElementById(
+                "zoom-value"
+            );
+
+        if (zoomText) {
+            zoomText.innerText =
+                softwareZoomLevel.toFixed(1)
+                +
+                "x (확대모드)";
+        }
+    }
+}
+
+
+// =========================================================
+// 1x / 1.5x / 2x / 3x 빠른 확대 버튼
+// =========================================================
+
+async function setCameraZoomPreset(value) {
+
+    const slider =
+        document.getElementById(
+            "zoom-slider"
+        );
+
+    softwareZoomLevel =
+        Number(value);
+
+    if (
+        slider
+        &&
+        !slider.disabled
+    ) {
+
+        const min =
+            Number(slider.min);
+
+        const max =
+            Number(slider.max);
+
+        slider.value =
+            Math.min(
+                max,
+                Math.max(min, value)
+            );
+    }
+
+    await changeCameraZoom(
+        value
+    );
+
+    if (
+        !hardwareZoomSupported
+        &&
+        Number(value) > 1
+        &&
+        !softwareZoomMode
+    ) {
+
+        softwareZoomMode = true;
+        updateSoftwareZoomButton();
+        applySoftwareZoomPreview();
+    }
+}
+
+
+function updateZoomPresetButtons(value) {
+
+    document
+        .querySelectorAll(
+            ".zoom-preset-button"
+        )
+        .forEach(
+            button => {
+
+                button.classList.remove(
+                    "active"
+                );
+            }
+        );
+
+    const values =
+        [1, 1.5, 2, 3];
+
+    const index =
+        values.findIndex(
+            item =>
+                Math.abs(item - value) < 0.06
+        );
+
+    const buttons =
+        document.querySelectorAll(
+            ".zoom-preset-button"
+        );
+
+    if (
+        index >= 0
+        &&
+        buttons[index]
+    ) {
+        buttons[index]
+            .classList.add(
+                "active"
+            );
+    }
+}
+
+
+// =========================================================
+// 소프트웨어 확대 모드
+// 실제 줌 미지원 기기에서도 중앙 부분을 크게 표시하고
+// 확대된 중앙 영역으로 BarcodeDetector를 실행합니다.
+// =========================================================
+
+function toggleSoftwareZoomMode() {
+
+    softwareZoomMode =
+        !softwareZoomMode;
+
+    updateSoftwareZoomButton();
+    applySoftwareZoomPreview();
+
+    const status =
+        document.getElementById(
+            "camera-status"
+        );
+
+    if (status) {
+
+        if (softwareZoomMode) {
+            status.innerText =
+                "✅ 확대 모드 ON / 중앙 영역을 확대해서 스캔합니다.";
+        }
+        else {
+            status.innerText =
+                hardwareZoomSupported
+                    ? "✅ 실제 카메라 줌 사용 중 / 자동초점 사용 가능"
+                    : "✅ 확대 모드 OFF / 기기 기본 카메라 사용 중";
+        }
+    }
+}
+
+
+function updateSoftwareZoomButton() {
+
+    const button =
+        document.getElementById(
+            "software-zoom-button"
+        );
+
+    if (!button) {
+        return;
+    }
+
+    if (softwareZoomMode) {
+
+        button.innerText =
+            "🔎 확대 모드 ON";
+
+        button.classList.add(
+            "active"
+        );
+    }
+    else {
+
+        button.innerText =
+            "🔎 확대 모드 OFF";
+
+        button.classList.remove(
+            "active"
+        );
+    }
+}
+
+
+function applySoftwareZoomPreview() {
+
+    if (!currentVideoElement) {
+        return;
+    }
+
+    if (
+        softwareZoomMode
+        &&
+        softwareZoomLevel > 1
+    ) {
+
+        currentVideoElement.style.transform =
+            `scale(${softwareZoomLevel})`;
+    }
+    else {
+
+        currentVideoElement.style.transform =
+            "scale(1)";
+    }
+}
+
+
+// =========================================================
+// 확대 스캔용 중앙 크롭 캔버스 생성
+// =========================================================
+
+function getSoftwareZoomFrame(video) {
+
+    if (
+        !softwareZoomMode
+        ||
+        softwareZoomLevel <= 1
+        ||
+        !video.videoWidth
+        ||
+        !video.videoHeight
+    ) {
+        return video;
+    }
+
+    if (!softwareZoomCanvas) {
+        softwareZoomCanvas =
+            document.createElement(
+                "canvas"
+            );
+    }
+
+    const canvas =
+        softwareZoomCanvas;
+
+    const sourceWidth =
+        video.videoWidth;
+
+    const sourceHeight =
+        video.videoHeight;
+
+    // 너무 과한 디지털 확대는 판독 품질을 오히려 떨어뜨릴 수 있어 4배 제한
+    const zoom =
+        Math.min(
+            4,
+            Math.max(
+                1,
+                softwareZoomLevel
+            )
+        );
+
+    const cropWidth =
+        sourceWidth / zoom;
+
+    const cropHeight =
+        sourceHeight / zoom;
+
+    const cropX =
+        (sourceWidth - cropWidth) / 2;
+
+    const cropY =
+        (sourceHeight - cropHeight) / 2;
+
+    canvas.width =
+        sourceWidth;
+
+    canvas.height =
+        sourceHeight;
+
+    const context =
+        canvas.getContext(
+            "2d",
+            {
+                alpha: false
+            }
+        );
+
+    context.drawImage(
+        video,
+        cropX,
+        cropY,
+        cropWidth,
+        cropHeight,
+        0,
+        0,
+        sourceWidth,
+        sourceHeight
+    );
+
+    return canvas;
+}
+
+
+// =========================================================
+// 자동초점 다시 맞추기
+// =========================================================
+
+async function refreshAutoFocus() {
+
     if (!currentVideoTrack) {
+
+        document.getElementById(
+            "camera-status"
+        ).innerText =
+            "⚠️ 먼저 카메라를 시작해주세요.";
 
         return;
     }
@@ -2594,58 +3057,73 @@ async function changeCameraZoom(value) {
                 ? currentVideoTrack.getCapabilities()
                 : {};
 
-        if (!capabilities.zoom) {
+        if (
+            capabilities.focusMode
+            &&
+            capabilities.focusMode.includes(
+                "continuous"
+            )
+        ) {
+
+            await currentVideoTrack
+                .applyConstraints({
+                    advanced: [
+                        {
+                            focusMode: "continuous"
+                        }
+                    ]
+                });
+
+            document.getElementById(
+                "camera-status"
+            ).innerText =
+                "🎯 연속 자동초점을 다시 적용했습니다.";
 
             return;
         }
 
-        let zoom =
-            Number(value);
+        if (
+            capabilities.focusMode
+            &&
+            capabilities.focusMode.includes(
+                "single-shot"
+            )
+        ) {
 
-        zoom =
-            Math.max(
-                Number(capabilities.zoom.min),
-                zoom
-            );
+            await currentVideoTrack
+                .applyConstraints({
+                    advanced: [
+                        {
+                            focusMode: "single-shot"
+                        }
+                    ]
+                });
 
-        zoom =
-            Math.min(
-                Number(capabilities.zoom.max),
-                zoom
-            );
-
-        await currentVideoTrack
-            .applyConstraints({
-
-                advanced: [
-                    {
-                        zoom: zoom
-                    }
-                ]
-
-            });
-
-        const zoomText =
             document.getElementById(
-                "zoom-value"
-            );
+                "camera-status"
+            ).innerText =
+                "🎯 한 번 초점을 다시 맞췄습니다.";
 
-        if (zoomText) {
-
-            zoomText.innerText =
-                zoom.toFixed(1)
-                +
-                "x";
+            return;
         }
 
+        document.getElementById(
+            "camera-status"
+        ).innerText =
+            "ℹ️ 이 기기는 브라우저에서 초점 제어를 제공하지 않아 기본 자동초점을 사용합니다.";
     }
 
     catch (error) {
 
         console.log(
-            "줌 변경 오류:",
+            "초점 재설정 오류:",
             error
         );
+
+        document.getElementById(
+            "camera-status"
+        ).innerText =
+            "ℹ️ 초점 제어는 기기 기본값을 사용합니다.";
     }
 }
 
@@ -2742,9 +3220,14 @@ async function scanFrame(video) {
 
     try {
 
+        const scanTarget =
+            getSoftwareZoomFrame(
+                video
+            );
+
         const barcodes =
             await scanner.detect(
-                video
+                scanTarget
             );
 
         if (
