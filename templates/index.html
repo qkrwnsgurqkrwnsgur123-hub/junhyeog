@@ -286,6 +286,41 @@ h2 {
 
 
 /* =====================================================
+   카메라 선택
+===================================================== */
+
+.camera-select-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+#camera-select {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background: white;
+    font-size: 16px;
+}
+
+.camera-action-button {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 11px;
+    border: none;
+    border-radius: 10px;
+    background: #444;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* =====================================================
    카메라 확대 모드
 ===================================================== */
 
@@ -1069,7 +1104,34 @@ RR
 <div
     style="font-size: 18px; font-weight: bold; margin-bottom: 10px;"
 >
-🔍 카메라 확대 / 초점
+🔍 Galaxy 카메라 확대 / 초점
+</div>
+
+<div class="camera-select-row">
+
+    <select
+        id="camera-select"
+        onchange="switchCameraFromSelect()"
+    >
+        <option value="">후면 카메라 자동 선택</option>
+    </select>
+
+    <button
+        type="button"
+        class="camera-action-button"
+        onclick="refreshCameraList(true)"
+    >
+        🔄 카메라 목록 새로고침
+    </button>
+
+    <button
+        type="button"
+        class="camera-action-button"
+        onclick="selectBestGalaxyCamera()"
+    >
+        🧭 최적 후면 카메라 자동 찾기
+    </button>
+
 </div>
 
 <div class="zoom-mode-buttons">
@@ -1077,6 +1139,8 @@ RR
     <button type="button" class="zoom-preset-button" onclick="setCameraZoomPreset(1.5)">1.5×</button>
     <button type="button" class="zoom-preset-button active" onclick="setCameraZoomPreset(2)">2×</button>
     <button type="button" class="zoom-preset-button" onclick="setCameraZoomPreset(3)">3×</button>
+    <button type="button" class="zoom-preset-button" onclick="setCameraZoomPreset(4)">4×</button>
+    <button type="button" class="zoom-preset-button" onclick="setCameraZoomPreset(5)">5×</button>
 </div>
 
 <input
@@ -1120,7 +1184,11 @@ RR
     id="camera-status"
     style="font-size: 13px; color: #666; margin-top: 10px; line-height: 1.5;"
 >
-카메라 시작 후 실제 줌 지원 여부를 확인합니다.
+Galaxy 기종에 맞춰 렌즈 목록·자동초점·실제 줌 지원 여부를 자동 확인합니다.
+</div>
+
+<div style="font-size: 12px; color: #888; margin-top: 8px; line-height: 1.5;">
+※ Galaxy S / A / Z / FE 등에서 공통으로 동작하도록 작성되었습니다. 브라우저가 특정 렌즈나 줌 API를 숨기는 기종은 소프트웨어 확대 모드로 자동 보완합니다.
 </div>
 
 </div>
@@ -2118,6 +2186,11 @@ let softwareZoomLevel = 2;
 let softwareZoomCanvas = null;
 let currentVideoElement = null;
 
+let cameraDevices = [];
+let selectedCameraDeviceId = "";
+let selectedCameraLabel = "";
+let cameraSwitchInProgress = false;
+
 let selectedMainCategory = "";
 
 let selectedSubCategory = "";
@@ -2371,26 +2444,35 @@ async function startScanner() {
         currentVideoElement =
             video;
 
+        const videoConstraints = {
+
+            width: {
+                ideal: 1920
+            },
+
+            height: {
+                ideal: 1080
+            }
+        };
+
+        if (selectedCameraDeviceId) {
+
+            videoConstraints.deviceId = {
+                exact: selectedCameraDeviceId
+            };
+        }
+        else {
+
+            videoConstraints.facingMode = {
+                ideal: "environment"
+            };
+        }
+
         currentStream =
             await navigator.mediaDevices
             .getUserMedia({
 
-                video: {
-
-                    facingMode: {
-                        ideal: "environment"
-                    },
-
-                    width: {
-                        ideal: 1920
-                    },
-
-                    height: {
-                        ideal: 1080
-                    }
-
-                },
-
+                video: videoConstraints,
                 audio: false
 
             });
@@ -2401,6 +2483,23 @@ async function startScanner() {
         currentVideoTrack =
             currentStream.getVideoTracks()[0];
 
+        try {
+            const settings = currentVideoTrack.getSettings
+                ? currentVideoTrack.getSettings()
+                : {};
+
+            if (settings.deviceId) {
+                selectedCameraDeviceId = settings.deviceId;
+            }
+
+            selectedCameraLabel =
+                currentVideoTrack.label || selectedCameraLabel || "후면 카메라";
+        }
+        catch (settingsError) {
+            console.log("카메라 설정 확인 실패:", settingsError);
+        }
+
+        await refreshCameraList(false);
         await applyCameraEnhancement();
 
         video.addEventListener(
@@ -2427,6 +2526,421 @@ async function startScanner() {
             +
             error.message;
     }
+}
+
+
+// =========================================================
+// Galaxy 범용 멀티 카메라 목록 / 렌즈 전환
+// =========================================================
+
+function isLikelyRearCamera(label) {
+
+    const text = String(label || "").toLowerCase();
+
+    return (
+        text.includes("back")
+        || text.includes("rear")
+        || text.includes("environment")
+        || text.includes("후면")
+        || text.includes("world")
+    );
+}
+
+
+function isLikelyFrontCamera(label) {
+
+    const text = String(label || "").toLowerCase();
+
+    return (
+        text.includes("front")
+        || text.includes("user")
+        || text.includes("selfie")
+        || text.includes("전면")
+    );
+}
+
+
+function isLikelyTelephotoCamera(label) {
+
+    const text = String(label || "").toLowerCase();
+
+    return (
+        text.includes("tele")
+        || text.includes("telephoto")
+        || text.includes("망원")
+        || text.includes("3x")
+        || text.includes("3 x")
+        || text.includes("5x")
+        || text.includes("5 x")
+        || text.includes("10x")
+        || text.includes("10 x")
+        || text.includes("zoom")
+    );
+}
+
+
+async function refreshCameraList(showMessage = false) {
+
+    const select =
+        document.getElementById("camera-select");
+
+    const status =
+        document.getElementById("camera-status");
+
+    if (!select || !navigator.mediaDevices?.enumerateDevices) {
+        return;
+    }
+
+    try {
+
+        const devices =
+            await navigator.mediaDevices.enumerateDevices();
+
+        cameraDevices =
+            devices.filter(
+                device => device.kind === "videoinput"
+            );
+
+        select.innerHTML = "";
+
+        const autoOption =
+            document.createElement("option");
+
+        autoOption.value = "";
+        autoOption.textContent = "후면 카메라 자동 선택";
+        select.appendChild(autoOption);
+
+        cameraDevices.forEach((device, index) => {
+
+            const option =
+                document.createElement("option");
+
+            option.value = device.deviceId;
+
+            const label =
+                device.label
+                || `카메라 ${index + 1}`;
+
+            option.textContent =
+                isLikelyTelephotoCamera(label)
+                ? `🔭 ${label}`
+                : `📷 ${label}`;
+
+            select.appendChild(option);
+        });
+
+        if (selectedCameraDeviceId) {
+            select.value = selectedCameraDeviceId;
+        }
+
+        if (showMessage && status) {
+            status.innerText =
+                `📷 카메라 ${cameraDevices.length}개를 찾았습니다. `
+                +
+                "기종에 따라 렌즈 이름이 Camera 0/1/2처럼 보일 수 있습니다. 필요하면 하나씩 바꿔 확인하세요.";
+        }
+    }
+    catch (error) {
+        console.log("카메라 목록 확인 실패:", error);
+
+        if (showMessage && status) {
+            status.innerText =
+                "⚠️ 카메라 목록을 불러오지 못했습니다: "
+                + error.message;
+        }
+    }
+}
+
+
+async function switchCameraFromSelect() {
+
+    const select =
+        document.getElementById("camera-select");
+
+    if (!select) {
+        return;
+    }
+
+    selectedCameraDeviceId = select.value || "";
+
+    const selectedOption =
+        select.options[select.selectedIndex];
+
+    selectedCameraLabel =
+        selectedOption
+        ? selectedOption.textContent.replace(/^📷\s*|^🔭\s*/, "")
+        : "";
+
+    if (alreadyScanning || currentStream) {
+        await restartCameraWithSelection();
+    }
+}
+
+
+async function restartCameraWithSelection() {
+
+    if (cameraSwitchInProgress) {
+        return;
+    }
+
+    cameraSwitchInProgress = true;
+
+    try {
+        stopCamera();
+        await startScanner();
+    }
+    finally {
+        cameraSwitchInProgress = false;
+    }
+}
+
+
+async function probeCameraDevice(device) {
+
+    let probeStream = null;
+
+    try {
+
+        probeStream =
+            await navigator.mediaDevices.getUserMedia({
+
+                video: {
+                    deviceId: {
+                        exact: device.deviceId
+                    },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                },
+
+                audio: false
+            });
+
+        const track =
+            probeStream.getVideoTracks()[0];
+
+        const settings =
+            track && track.getSettings
+                ? track.getSettings()
+                : {};
+
+        const capabilities =
+            track && track.getCapabilities
+                ? track.getCapabilities()
+                : {};
+
+        const label =
+            track?.label || device.label || "";
+
+        const facingMode =
+            String(settings.facingMode || "").toLowerCase();
+
+        const zoomMax =
+            capabilities.zoom
+                ? Number(capabilities.zoom.max || 1)
+                : 1;
+
+        const zoomMin =
+            capabilities.zoom
+                ? Number(capabilities.zoom.min || 1)
+                : 1;
+
+        const widthMax =
+            capabilities.width
+                ? Number(capabilities.width.max || settings.width || 0)
+                : Number(settings.width || 0);
+
+        const heightMax =
+            capabilities.height
+                ? Number(capabilities.height.max || settings.height || 0)
+                : Number(settings.height || 0);
+
+        let rearScore = 0;
+
+        if (
+            facingMode === "environment"
+            || isLikelyRearCamera(label)
+        ) {
+            rearScore += 100;
+        }
+
+        if (
+            facingMode === "user"
+            || isLikelyFrontCamera(label)
+        ) {
+            rearScore -= 200;
+        }
+
+        if (isLikelyTelephotoCamera(label)) {
+            rearScore += 25;
+        }
+
+        // 작은 QR/Data Matrix 판독에서는 실제 줌 지원을 높은 우선순위로 둡니다.
+        rearScore += Math.min(40, Math.max(0, zoomMax - 1) * 8);
+
+        // 해상도도 약간 반영합니다.
+        rearScore += Math.min(15, (widthMax * heightMax) / 1000000);
+
+        return {
+            device,
+            label,
+            settings,
+            capabilities,
+            facingMode,
+            zoomMin,
+            zoomMax,
+            widthMax,
+            heightMax,
+            score: rearScore
+        };
+    }
+
+    catch (error) {
+
+        return {
+            device,
+            label: device.label || "",
+            error,
+            score: -9999,
+            zoomMin: 1,
+            zoomMax: 1
+        };
+    }
+
+    finally {
+
+        if (probeStream) {
+            probeStream.getTracks().forEach(
+                track => track.stop()
+            );
+        }
+    }
+}
+
+
+async function selectBestGalaxyCamera() {
+
+    const status =
+        document.getElementById("camera-status");
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+
+        if (status) {
+            status.innerText =
+                "❌ 이 브라우저에서는 카메라 기능을 사용할 수 없습니다.";
+        }
+        return;
+    }
+
+    // 권한이 없으면 먼저 현재 카메라를 시작해야 카메라 라벨/장치가 제대로 보이는 경우가 많습니다.
+    if (!currentStream) {
+
+        if (status) {
+            status.innerText =
+                "📷 먼저 스캔 시작을 눌러 카메라 권한을 허용한 뒤 자동 찾기를 다시 눌러주세요.";
+        }
+        return;
+    }
+
+    if (status) {
+        status.innerText =
+            "🧭 후면 카메라를 확인하고 있습니다...";
+    }
+
+    await refreshCameraList(false);
+
+    if (!cameraDevices.length) {
+
+        if (status) {
+            status.innerText =
+                "⚠️ 사용할 수 있는 카메라를 찾지 못했습니다.";
+        }
+        return;
+    }
+
+    // 현재 스트림은 probe 중 충돌을 피하기 위해 잠시 종료합니다.
+    const previousDeviceId =
+        selectedCameraDeviceId;
+
+    stopCamera();
+
+    const results = [];
+
+    for (const device of cameraDevices) {
+
+        const result =
+            await probeCameraDevice(device);
+
+        // facingMode가 숨겨진 브라우저에서도 처음 environment로 열린 카메라는
+        // 후면일 가능성이 높으므로 가산점을 줍니다.
+        if (
+            previousDeviceId
+            && device.deviceId === previousDeviceId
+        ) {
+            result.score += 60;
+        }
+
+        results.push(result);
+    }
+
+    results.sort(
+        (a, b) => b.score - a.score
+    );
+
+    console.table(
+        results.map(item => ({
+            label: item.label,
+            facingMode: item.facingMode || "",
+            zoomMax: item.zoomMax,
+            widthMax: item.widthMax || 0,
+            heightMax: item.heightMax || 0,
+            score: item.score
+        }))
+    );
+
+    const best =
+        results.find(item => item.score > -100);
+
+    if (!best) {
+
+        selectedCameraDeviceId =
+            previousDeviceId || "";
+
+        if (status) {
+            status.innerText =
+                "ℹ️ 자동 판별에 실패했습니다. 카메라 목록에서 직접 후면 렌즈를 선택해주세요.";
+        }
+
+        await startScanner();
+        return;
+    }
+
+    selectedCameraDeviceId =
+        best.device.deviceId;
+
+    selectedCameraLabel =
+        best.label || "선택된 후면 카메라";
+
+    const select =
+        document.getElementById("camera-select");
+
+    if (select) {
+        select.value = selectedCameraDeviceId;
+    }
+
+    if (status) {
+
+        const zoomInfo =
+            best.zoomMax > 1
+                ? ` / 실제 줌 최대 ${best.zoomMax.toFixed(1)}×`
+                : " / 실제 줌 API 미노출";
+
+        status.innerText =
+            "✅ 최적 후면 카메라 후보를 선택했습니다"
+            + zoomInfo
+            + ". 카메라를 다시 시작합니다...";
+    }
+
+    await startScanner();
 }
 
 
@@ -2531,7 +3045,7 @@ async function applyCameraEnhancement() {
                     );
 
                 let targetZoom =
-                    2;
+                    Math.max(1, softwareZoomLevel);
 
                 targetZoom =
                     Math.max(
@@ -2592,7 +3106,7 @@ async function applyCameraEnhancement() {
                 if (slider) {
 
                     slider.min = 1;
-                    slider.max = 4;
+                    slider.max = 5;
                     slider.step = 0.1;
                     slider.value = softwareZoomLevel;
                     slider.disabled = false;
@@ -2633,7 +3147,14 @@ async function applyCameraEnhancement() {
                 :
                 "실제 줌 미지원 · 확대 모드 사용 가능";
 
+            const cameraName =
+                selectedCameraLabel
+                ? "📷 " + selectedCameraLabel + " / "
+                : "";
+
             status.innerText =
+                cameraName
+                +
                 "✅ "
                 +
                 focusMessage
@@ -2731,6 +3252,27 @@ async function changeCameraZoom(value) {
                         "x";
                 }
 
+                // 요청 배율이 하드웨어 최대보다 크면 소프트웨어 중앙 확대를 추가로 사용합니다.
+                if (requestedZoom > zoom + 0.01) {
+                    softwareZoomMode = true;
+                    softwareZoomLevel = Math.min(5, requestedZoom / Math.max(1, zoom));
+                    updateSoftwareZoomButton();
+                    applySoftwareZoomPreview();
+
+                    if (zoomText) {
+                        zoomText.innerText =
+                            requestedZoom.toFixed(1)
+                            +
+                            "x (혼합 확대)";
+                    }
+                }
+                else if (softwareZoomMode) {
+                    softwareZoomMode = false;
+                    softwareZoomLevel = requestedZoom;
+                    updateSoftwareZoomButton();
+                    applySoftwareZoomPreview();
+                }
+
                 return;
             }
 
@@ -2765,7 +3307,7 @@ async function changeCameraZoom(value) {
 
 
 // =========================================================
-// 1x / 1.5x / 2x / 3x 빠른 확대 버튼
+// 1x / 1.5x / 2x / 3x / 4x / 5x 빠른 확대 버튼
 // =========================================================
 
 async function setCameraZoomPreset(value) {
@@ -2832,7 +3374,7 @@ function updateZoomPresetButtons(value) {
         );
 
     const values =
-        [1, 1.5, 2, 3];
+        [1, 1.5, 2, 3, 4, 5];
 
     const index =
         values.findIndex(
@@ -2982,10 +3524,10 @@ function getSoftwareZoomFrame(video) {
     const sourceHeight =
         video.videoHeight;
 
-    // 너무 과한 디지털 확대는 판독 품질을 오히려 떨어뜨릴 수 있어 4배 제한
+    // 과한 디지털 확대는 판독 품질을 떨어뜨릴 수 있어 5배로 제한
     const zoom =
         Math.min(
-            4,
+            5,
             Math.max(
                 1,
                 softwareZoomLevel
