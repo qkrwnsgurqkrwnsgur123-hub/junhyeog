@@ -1140,9 +1140,15 @@ RR
 <button
     id="scan-button"
     onclick="startScanner()"
+    style="display:none;"
+    aria-hidden="true"
 >
 📷 바코드 스캔 시작
 </button>
+
+<div class="notice" id="auto-scan-notice">
+    ⚡ 자동 연속 스캔 모드 — 카테고리를 선택하면 카메라가 자동으로 시작됩니다.
+</div>
 
 
 <div
@@ -2283,6 +2289,20 @@ let selectedSubCategory = "";
 
 let selectedAlcType = "";
 
+// =========================================================
+// 초고속 자동 연속 스캔 상태
+// =========================================================
+let scanBusy = false;
+let scanLoopTimer = null;
+let lastDetectedRaw = "";
+let lastDetectedAt = 0;
+let scanPassCounter = 0;
+const FAST_SCAN_INTERVAL_MS = 35;
+const SAME_CODE_COOLDOWN_MS = 1400;
+const POST_SCAN_RESUME_MS = 180;
+const FAST_SCAN_MAX_WIDTH = 1280;
+let fastScanCanvas = null;
+
 
 // =========================================================
 // HTML 안전
@@ -2397,7 +2417,12 @@ function selectCategory(
     ).innerText =
         "✅ 선택 완료\n\n"
         + text
-        + "\n\n📷 바코드 스캔 시작 버튼을 눌러주세요.";
+        + "\n\n⚡ 자동 스캔을 시작합니다.";
+
+    // 버튼을 누르지 않아도 카테고리 선택 즉시 카메라 시작
+    if (!alreadyScanning && !currentStream) {
+        startScanner();
+    }
 }
 
 
@@ -2406,6 +2431,13 @@ function selectCategory(
 // =========================================================
 
 function stopCamera() {
+
+    if (scanLoopTimer) {
+        clearTimeout(scanLoopTimer);
+        scanLoopTimer = null;
+    }
+
+    scanBusy = false;
 
     if (currentStream) {
 
@@ -2686,11 +2718,16 @@ async function startScanner() {
             "loadeddata",
             () => {
 
-                scanFrame(
-                    video
-                );
+                // 가능한 경우 실제 영상 재생을 확실히 시작
+                video.play().catch(() => {});
 
-            }
+                document.getElementById("result").innerText =
+                    "⚡ 자동 연속 스캔 중...\n\n바코드를 카메라에 보여주세요.";
+
+                scheduleFastScan(video, 0);
+
+            },
+            { once: true }
         );
 
     }
@@ -3930,77 +3967,135 @@ async function sendBarcode(
 
 
 // =========================================================
-// 스캔 프레임
+// 초고속 자동 연속 스캔
 // =========================================================
 
+function scheduleFastScan(video, delay = FAST_SCAN_INTERVAL_MS) {
+    if (!alreadyScanning || !video) return;
+
+    if (scanLoopTimer) {
+        clearTimeout(scanLoopTimer);
+    }
+
+    scanLoopTimer = setTimeout(() => {
+        scanFrame(video);
+    }, delay);
+}
+
+
+function getFastScanTarget(video) {
+    // 소프트웨어 확대가 켜져 있으면 기존 확대 프레임을 그대로 사용합니다.
+    if (softwareZoomMode) {
+        return getSoftwareZoomFrame(video);
+    }
+
+    const vw = video.videoWidth || 0;
+    const vh = video.videoHeight || 0;
+
+    if (!vw || !vh || vw <= FAST_SCAN_MAX_WIDTH) {
+        return video;
+    }
+
+    // 1080p/4K 전체 프레임을 매번 검사하면 느려질 수 있으므로
+    // 일반 패스는 1280px 이하로 축소해서 빠르게 검사합니다.
+    const scale = FAST_SCAN_MAX_WIDTH / vw;
+    const targetW = Math.max(320, Math.round(vw * scale));
+    const targetH = Math.max(240, Math.round(vh * scale));
+
+    if (!fastScanCanvas) {
+        fastScanCanvas = document.createElement("canvas");
+    }
+
+    if (fastScanCanvas.width !== targetW) fastScanCanvas.width = targetW;
+    if (fastScanCanvas.height !== targetH) fastScanCanvas.height = targetH;
+
+    const ctx = fastScanCanvas.getContext("2d", {
+        alpha: false,
+        desynchronized: true
+    });
+
+    if (!ctx) return video;
+
+    ctx.drawImage(video, 0, 0, targetW, targetH);
+    return fastScanCanvas;
+}
+
+
+async function detectBarcodeFast(video) {
+    scanPassCounter++;
+
+    // 대부분의 프레임은 축소한 빠른 영상으로 검사하고,
+    // 4번째마다 원본도 검사해 아주 작은 QR/Data Matrix를 놓치지 않게 합니다.
+    const useFullResolution =
+        !softwareZoomMode && (scanPassCounter % 4 === 0);
+
+    const target = useFullResolution
+        ? video
+        : getFastScanTarget(video);
+
+    return await scanner.detect(target);
+}
+
+
 async function scanFrame(video) {
-
-    if (!alreadyScanning) {
-
+    if (!alreadyScanning || !scanner || scanBusy) {
+        if (alreadyScanning) scheduleFastScan(video);
         return;
     }
+
+    if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+        scheduleFastScan(video, 40);
+        return;
+    }
+
+    scanBusy = true;
 
     try {
+        const barcodes = await detectBarcodeFast(video);
 
-        const scanTarget =
-            getSoftwareZoomFrame(
-                video
-            );
+        if (barcodes && barcodes.length > 0) {
+            const raw = String(barcodes[0].rawValue || "");
+            const now = Date.now();
 
-        const barcodes =
-            await scanner.detect(
-                scanTarget
-            );
+            if (raw) {
+                // 같은 코드가 렌즈 앞에 계속 있어도 연속 저장되지 않도록 잠깐 무시
+                if (
+                    raw === lastDetectedRaw &&
+                    (now - lastDetectedAt) < SAME_CODE_COOLDOWN_MS
+                ) {
+                    scanBusy = false;
+                    scheduleFastScan(video, 60);
+                    return;
+                }
 
-        if (
-            barcodes.length > 0
-        ) {
+                lastDetectedRaw = raw;
+                lastDetectedAt = now;
 
-            const raw =
-                barcodes[0]
-                .rawValue;
+                document.getElementById("result").innerText =
+                    "⚡ 인식 완료 — 저장 중...";
 
-            stopCamera();
+                // 카메라는 끄지 않습니다. 서버 처리 중에만 검출을 잠시 멈춥니다.
+                await processBarcode(raw);
 
-            document.getElementById(
-                "result"
-            ).innerText =
-                "⏳ 검사 중...";
+                scanBusy = false;
 
-            await processBarcode(
-                raw
-            );
+                if (alreadyScanning && currentStream) {
+                    scheduleFastScan(video, POST_SCAN_RESUME_MS);
+                }
 
-            return;
+                return;
+            }
         }
-
     }
-
     catch (error) {
-
-        stopCamera();
-
-        document.getElementById(
-            "result"
-        ).innerText =
-            "❌ 오류\n\n"
-            +
-            error.message;
-
-        return;
+        console.error("바코드 검출 오류:", error);
+        // 일시적인 detect 오류 때문에 카메라 전체를 종료하지 않습니다.
     }
+
+    scanBusy = false;
 
     if (alreadyScanning) {
-
-        requestAnimationFrame(
-            () => {
-
-                scanFrame(
-                    video
-                );
-
-            }
-        );
+        scheduleFastScan(video, FAST_SCAN_INTERVAL_MS);
     }
 }
 
